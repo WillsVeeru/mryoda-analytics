@@ -1,0 +1,1 @@
+const fs=require('fs');let p='outputs/qc-performance-tabs.js',s=fs.readFileSync(p,'utf8');s=s.replace("'\\uFEFF'.replace('\\\\uFEFF','\\uFEFF')","'\uFEFF'");s=s.replace(".join('\\r\\n').replaceAll('\\\\r\\\\n','\\r\\n')",".join('\\r\\n')");fs.writeFileSync(p,s);
