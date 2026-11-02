@@ -1,0 +1,1 @@
+const fs=require('fs');let h=fs.readFileSync('outputs/qc-dashboard.html','utf8');console.log([...h.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m=>m[1]).filter(s=>s.includes('main')||s.includes('toolbar')).join('\n').slice(-6500));

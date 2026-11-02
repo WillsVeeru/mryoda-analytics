@@ -1,0 +1,1 @@
+const fs=require('fs');const p='outputs/qc-dashboard.html';let h=fs.readFileSync(p,'utf8');h=h.replace('</head>',()=>'<style id="hide-branch-chart">#branchChartCTA,#branchChartView{display:none!important}#branchTableView{display:block!important}</style></head>');fs.writeFileSync(p,h);console.log('Branch performance chart and CTA hidden; table remains visible.');

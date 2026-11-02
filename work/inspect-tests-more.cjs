@@ -1,0 +1,1 @@
+const fs=require('fs');let h=fs.readFileSync('outputs/tests-patients.html','utf8');console.log(h.match(/<div class="home-more"[\s\S]*?<\/div>/)?.[0]);console.log(h.match(/function baseMatch[\s\S]*?(?=function recordsFor)/)?.[0]);console.log(h.match(/function resetAll\([^]*?(?=function refreshHome)/)?.[0]);

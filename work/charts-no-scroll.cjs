@@ -1,0 +1,5 @@
+const fs=require('fs');const css=`<style id="charts-no-internal-scroll">
+.rev-chart,.rev-chart [id^="svg-"],.specialty-chart,.tp-chart,#reportInlineChart .tp-chart,#branchChartCanvas,.home-chart,.app-inline-chart,.all-metric-chart,.all-metric-grid{overflow:visible!important;max-height:none!important;height:auto;min-width:0!important}
+.rev-chart svg,.specialty-chart svg,.tp-chart svg,#reportInlineChart .tp-chart svg,#branchChartCanvas svg,.home-chart svg,.app-inline-chart svg,.all-metric-chart svg{display:block;width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important;max-height:none!important}
+.rev-chart [id^="svg-"],.specialty-chart [id^="specialSVG-"],#branchChartCanvas{width:100%;max-width:100%;min-width:0}
+</style>`;for(const name of ['home','qc-dashboard','revenue-sales','specialty','tests-patients']){let p='outputs/'+name+'.html',h=fs.readFileSync(p,'utf8');h=h.replace(/<style id="charts-no-internal-scroll">[\s\S]*?<\/style>/g,'');h=h.replace('</head>',()=>css+'</head>');fs.writeFileSync(p,h)}console.log('Internal chart scrolling removed across all pages; SVG charts scale to container width. Table scrolling unchanged.');

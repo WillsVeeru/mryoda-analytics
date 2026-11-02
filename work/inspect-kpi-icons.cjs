@@ -1,0 +1,1 @@
+const fs=require('fs');for(const name of ['home','qc-dashboard','revenue-sales','specialty','tests-patients']){let h=fs.readFileSync('outputs/'+name+'.html','utf8');console.log(name+': '+[...h.matchAll(/(?:kpi-label|class="label"|class="revenue-kpi"|tp-stat-top|metric-icon)[^]{0,120}/g)].slice(0,6).map(m=>m[0]).join(' | '))}

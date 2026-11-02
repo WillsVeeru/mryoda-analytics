@@ -1,0 +1,1 @@
+const fs=require('fs');let h=fs.readFileSync('outputs/home.html','utf8');console.log(h.match(/<div class="home-tables">[\s\S]*?<\/main>/)?.[0]?.slice(0,3500));console.log(h.match(/const originalHomeChart[\s\S]*?<\/script>/)?.[0]?.slice(0,3500));

@@ -1,0 +1,1 @@
+const fs=require('fs');for(const name of ['home','revenue-sales','specialty','tests-patients']){let h=fs.readFileSync('outputs/'+name+'.html','utf8');console.log(name, h.match(/(?:const|let)[^;]{0,100}today='[^']+'/)?.[0]||h.match(/TODAY='[^']+'/)?.[0]);console.log(h.match(/function quickRange\([\s\S]*?(?=function)/)?.[0]?.slice(-500))}

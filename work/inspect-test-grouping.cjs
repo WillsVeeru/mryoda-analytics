@@ -1,0 +1,1 @@
+const fs=require('fs');let h=fs.readFileSync('outputs/tests-patients.html','utf8');console.log(h.match(/function appendTestsChartFields\(id\)[\s\S]*?(?=function setTestsChartControl)/)?.[0]);console.log(h.match(/function drawReportChart\(id\)[\s\S]*?(?=,max=Math.max)/)?.[0]?.slice(0,1600));

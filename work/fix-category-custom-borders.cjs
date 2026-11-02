@@ -1,0 +1,9 @@
+const fs=require('fs');const p='outputs/tests-patients.html';let h=fs.readFileSync(p,'utf8');const css=`<style id="category-custom-field-borders">
+#types-category .category-chart-fields .styled-select{display:inline-flex;min-width:88px;max-width:none;vertical-align:middle}
+#types-category .category-chart-fields .styled-select .select-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;box-sizing:border-box;width:100%;height:32px;min-height:32px;border:1px solid #cbd8e7!important;border-radius:9px;background:#fff!important;color:#375575;font:400 12px Inter,Arial,sans-serif;line-height:normal;padding:0 10px 0 11px!important;margin:0;box-shadow:none;outline-offset:2px;white-space:nowrap}
+#types-category .category-chart-fields .styled-select .select-trigger:after{width:6px;height:6px;margin-left:2px;flex-shrink:0;border-color:#465f7b}
+#types-category .category-chart-fields .styled-select .select-trigger:hover{border-color:#92adc5!important;background:#fff!important}
+#types-category .category-chart-fields .styled-select .select-trigger:focus-visible,#types-category .category-chart-fields .styled-select .select-trigger[aria-expanded="true"]{border-color:#35B34A!important;outline:2px solid #35B34A;background:#fff!important}
+#types-category .category-chart-fields label:nth-child(2) .styled-select{min-width:100px!important}
+#types-category .category-chart-fields label:last-child .styled-select{min-width:58px!important}
+</style>`;h=h.replace(/<style id="category-custom-field-borders">[\s\S]*?<\/style>/g,'');h=h.replace('</head>',()=>css+'</head>');fs.writeFileSync(p,h);if(!h.includes('.styled-select .select-trigger{')||!h.includes('border:1px solid #cbd8e7!important'))throw Error('Custom dropdown field rule missing');console.log('Explicit borders applied to custom dropdown buttons and retained on native fields; refresh/chart rerender states covered.');

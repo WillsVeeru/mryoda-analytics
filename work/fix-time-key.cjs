@@ -1,0 +1,1 @@
+const fs=require('fs');let p='outputs/qc-dashboard.html',h=fs.readFileSync(p,'utf8');h=h.replace("event.key==='Enter'||event.key===' '","event.keyCode===13||event.keyCode===32");fs.writeFileSync(p,h);fs.writeFileSync('work/dashboard-check.js',[...h.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n'));

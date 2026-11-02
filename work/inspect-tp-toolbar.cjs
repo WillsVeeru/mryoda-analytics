@@ -1,0 +1,1 @@
+const fs=require('fs');let p='outputs/tests-patients.html',h=fs.readFileSync(p,'utf8');let start=h.indexOf('function drawReportChart(id)'),end=h.indexOf('function renderReports()',start),code=h.slice(start,end);console.log(code.slice(0,4200));

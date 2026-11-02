@@ -1,0 +1,1 @@
+const fs=require('fs');const p='outputs/tests-patients.html';let h=fs.readFileSync(p,'utf8');h=h.replace('</head>',()=>'<style id="hide-chart-selection-section">.tp-selection{display:none!important}</style></head>');fs.writeFileSync(p,h);console.log('Chart selection-status section hidden; underlying selection controls retained for compatibility.');
