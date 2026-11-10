@@ -153,3 +153,25 @@ function setFinancialSidebarDemoMode(enabled) {
 }
 
 setFinancialSidebarDemoMode(true);
+
+function mountFinancialBranchComparison() {
+  const chart = co('coComparison');
+  const card = chart?.closest('section');
+  if (!card || co('financialBranchComparison')) return;
+  const section = document.createElement('details');
+  section.id = 'financialBranchComparison';
+  section.className = 'financial-comparison-section';
+  const summary = document.createElement('summary');
+  summary.innerHTML = '<span class="financial-comparison-icon">' + dashboardIcon('ChartColumn') + '</span>' +
+    '<span class="financial-comparison-caption"><strong>Branch Financial Comparison</strong>' +
+    '<small>Compare net revenue, total expenditure and branch balance</small></span>' +
+    '<span class="financial-comparison-action"><span class="comparison-closed">Show chart</span>' +
+    '<span class="comparison-open">Hide chart</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>';
+  card.insertAdjacentElement('beforebegin', section);
+  section.append(summary, card);
+  const sync = () => { section.open = location.hash !== '#coWorkspaceCharts'; };
+  sync();
+  window.addEventListener('hashchange', sync);
+}
+
+mountFinancialBranchComparison();

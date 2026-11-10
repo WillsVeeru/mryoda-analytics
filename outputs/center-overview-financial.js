@@ -14,6 +14,14 @@ const financialSampleTests = {
   MICROBIOLOGY: ['Urine Culture', 'Blood Culture']
 };
 
+function financialDoctorAssignment(row) {
+  if (row.doctor) return {doctor:row.doctor, doctorSource:'source'};
+  if (row.type === 'Walk-in') return {doctor:'Self / Walk-in', doctorSource:'demo'};
+  const seed = [row.centerId,row.id,row.employeeId,row.category].join('|');
+  const hash = [...seed].reduce((value,character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0);
+  return {doctor:['Demo Doctor A','Demo Doctor B','Demo Doctor C'][hash % 3], doctorSource:'demo'};
+}
+
 function financialTestRows(records) {
   const rows = [];
   for (const record of records) {
@@ -39,6 +47,8 @@ let financialModule = 'Overall Revenue';
 let financialTrail = [];
 let financialBranchPath = 'client';
 let financialCostPeriod = 1;
+const financialTablePageStates = new Map();
+const financialTableControllers = new WeakMap();
 let financialHeaderClientType = 'all';
 let financialHeaderClient = 'all';
 const financialMultiFilters = new Map();
@@ -195,8 +205,7 @@ function mountFinancialOverviewHeader() {
     ['financialDoctor', 'Doctor', [['all', 'All']]],
     ['financialRep', 'PRO / Sales Rep', [['all', 'All']]]
   ]) more.appendChild(financialHeaderSelectField(id, label, options));
-  co('financialDoctor').disabled = true;
-  co('financialDoctor').closest('label').title = 'Doctor data is not connected in this sample';
+  co('financialDoctor').closest('label').title = 'Search and select doctors. Demo directory; live doctor data is not connected.';
 }
 
 function syncFinancialHeaderClientOptions(records) {
@@ -220,6 +229,26 @@ function syncFinancialHeaderClientOptions(records) {
     clientSelect.appendChild(option);
   }
   clientSelect.value = financialHeaderClient;
+  const doctorSelect = co('financialDoctor');
+  if (doctorSelect) {
+    const doctors = new Map();
+    records.forEach(row => {
+      if (row.doctor) doctors.set(row.doctor, (doctors.get(row.doctor) || 0) + row.tests);
+    });
+    const directory = [...doctors].sort(([a],[b]) => a.localeCompare(b));
+    const signature = JSON.stringify(directory);
+    doctorSelect.dataset.demoDirectory = String(records.some(row => row.doctorSource === 'demo'));
+    if (doctorSelect.dataset.signature !== signature) {
+      doctorSelect.replaceChildren(new Option('All','all'));
+      for (const [name, count] of directory) {
+        const option = new Option(name,name);
+        option.dataset.testCount = String(count);
+        doctorSelect.appendChild(option);
+      }
+      doctorSelect.dataset.signature = signature;
+    }
+    doctorSelect.disabled = !directory.length;
+  }
   const repSelect = co('financialRep');
   if (repSelect) {
     const reps = new Map(records.flatMap(row => [[row.proId, row.pro], [row.representativeId, row.representative]]).filter(([id]) => id));
@@ -274,6 +303,7 @@ function financialLedger(applyHeaderFilters = true) {
       const rate = cptRates.get(row.test.toLowerCase());
       return {
         ...row,
+        ...financialDoctorAssignment(row),
         department: row.category,
         name: row.type === 'Walk-in' ? 'Yoda Walk-In' : row.name,
         clientKey: row.type === 'Walk-in' ? 'walk-in' : row.id,
@@ -459,9 +489,11 @@ function renderFinancialReport() {
     (showCost ? 'CPT cost = tests × rate. ' : '') +
     (showMargin ? marginLabel + ' = ' + marginFormula + '. ' : '') +
     (clientFilter ? 'B2B includes Cash & Carry, Rolling Advance and Credit Client accounts.' : '') +
-    (showCredit ? ' Sample credit balances are account snapshots. Near Limit starts at 80% usage.' : '');
+    (showCredit ? ' Sample credit balances are account snapshots. Near Limit starts at 80% usage.' : '') +
+    ' Doctor assignments are illustrative until a live directory is connected.';
   financialVisibleGroups = groups;
   financialFormulaTotals = financialTotals(records);
+  enhanceFinancialTables();
 }
 
 let financialVisibleGroups = [];
@@ -959,6 +991,7 @@ function renderFinancialModule() {
         ['Selected branches', ...cashValues(totals)]);
   }
   co('financialOtherModule').innerHTML = content;
+  enhanceFinancialTables();
 }
 
 async function uploadFinancialCpt(file) {
@@ -1202,6 +1235,7 @@ function reviewFinancialCredit(index) {
     ['Status', credit.status]
   ]);
   co('financialCreditDialog').showModal();
+  enhanceFinancialTables(co('financialCreditDetails'), 'Credit Review');
 }
 
 /* Keep native select values and change handlers as the source of truth. */
@@ -1225,11 +1259,12 @@ function mountFinancialFieldDesign() {
     close();
     const panel = document.createElement('div');
     panel.className = 'financial-select-panel';
+    if (select.id === 'financialDoctor') panel.classList.add('financial-doctor-panel');
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', label);
     const heading = document.createElement('div');
     heading.className = 'financial-select-heading';
-    heading.textContent = label;
+    heading.textContent = label + (select.id === 'financialDoctor' && select.dataset.demoDirectory === 'true' ? ' · Demo directory' : '');
     const list = document.createElement('div');
     list.className = 'financial-select-options';
     const multiple = financialMultiFilterIds.has(select.id);
@@ -1254,7 +1289,8 @@ function mountFinancialFieldDesign() {
       const values = selected();
       list.querySelectorAll('input[type="checkbox"]').forEach(input => { input.checked = values.has(input.value); });
       if (allButton) allButton.textContent = (values.size === options.length ? 'Deselect all' : 'Select all') + ' (' + options.length + ')';
-      footer.textContent = values.size + ' of ' + options.length + ' selected';
+      footer.textContent = values.size + ' of ' + options.length + ' selected' +
+        (select.id === 'financialDoctor' && select.dataset.demoDirectory === 'true' ? ' · Demo data' : '');
     }
     function draw(query = '') {
       list.replaceChildren();
@@ -1274,6 +1310,14 @@ function mountFinancialFieldDesign() {
           const text = document.createElement('span');
           text.textContent = option.text;
           row.append(check, text);
+          if (select.id === 'financialDoctor' && option.dataset.testCount) {
+            const count = document.createElement('small');
+            count.className = 'financial-doctor-count';
+            count.textContent = centerNumber(Number(option.dataset.testCount));
+            count.title = 'Tests in the selected location and date scope';
+            count.setAttribute('aria-label', count.textContent + ' tests');
+            row.appendChild(count);
+          }
           list.appendChild(row);
           continue;
         }
@@ -1302,7 +1346,7 @@ function mountFinancialFieldDesign() {
       search = document.createElement('input');
       search.type = 'search';
       search.className = 'financial-select-search';
-      search.placeholder = 'Search options…';
+      search.placeholder = select.id === 'financialDoctor' ? 'Search ' + options.length + ' doctors…' : 'Search options…';
       search.setAttribute('aria-label', 'Search ' + label);
       search.addEventListener('input', () => draw(search.value));
       panel.appendChild(search);
@@ -1321,7 +1365,7 @@ function mountFinancialFieldDesign() {
     active = { panel, button };
     button.setAttribute('aria-expanded', 'true');
     const rect = button.getBoundingClientRect();
-    const width = Math.min(Math.max(rect.width, 250), innerWidth - 24);
+    const width = Math.min(Math.max(rect.width, select.id === 'financialDoctor' ? 320 : 250), innerWidth - 24);
     panel.style.width = width + 'px';
     panel.style.left = Math.max(12, Math.min(rect.left, innerWidth - width - 12)) + 'px';
     const below = innerHeight - rect.bottom - 20;
@@ -1343,6 +1387,7 @@ function mountFinancialFieldDesign() {
   }
   function sync() {
     main.querySelectorAll('.co-header select, .co-financial-report select').forEach(select => {
+      if (select.closest('.financial-table-footer')) return;
       if (!fields.has(select)) {
         const label = labels[select.id] || select.closest('label')?.firstChild?.textContent?.trim() || 'Select option';
         const button = document.createElement('button');
@@ -1471,3 +1516,169 @@ function mountFinancialChartTooltips() {
 }
 
 mountFinancialChartTooltips();
+
+function financialTableRowGroups(rows) {
+  const groups = [];
+  for (const row of rows) {
+    if (row.classList.contains('cost-breakdown-row')) {
+      if (groups.length) groups[groups.length - 1].details.push(row);
+    } else if (!row.querySelector('.co-empty')) groups.push({row, details:[]});
+  }
+  return groups;
+}
+
+function financialTablePageWindow(count, page, size) {
+  const pages = Math.max(1, Math.ceil(count / size));
+  const current = Math.max(1, Math.min(page, pages));
+  const start = (current - 1) * size;
+  return {page:current, pages, start, end:Math.min(start + size, count)};
+}
+
+function financialTableCellText(cell) {
+  const name = cell.querySelector('.financial-drill-name');
+  if (name) return name.textContent.trim();
+  const copy = cell.cloneNode(true);
+  copy.querySelectorAll('svg').forEach(node => node.remove());
+  copy.querySelectorAll('br').forEach(node => node.replaceWith(document.createTextNode(' ')));
+  return copy.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function exportFinancialDataTable(controller) {
+  const table = controller.table;
+  const header = Array.from(table.tHead?.rows[0]?.cells || []).map(financialTableCellText);
+  const columns = header.map((label,index) => /^(Action|Review)$/i.test(label) ? -1 : index).filter(index => index >= 0);
+  const values = row => columns.map(index => row.cells[index] ? financialTableCellText(row.cells[index]) : '');
+  const rows = [columns.map(index => header[index]), ...controller.groups.map(group => values(group.row)),
+    ...Array.from(table.tFoot?.rows || []).map(values)];
+  if (controller.module === 'Profit & Loss') {
+    const capital = co('financialOtherModule').querySelector('.pnl-capital');
+    if (capital) rows.push(['Capital expenditure (shown separately)',capital.querySelector('strong').textContent,
+      capital.querySelector('p').textContent]);
+  }
+  const range = controller.module === 'Cost Analysis' ? financialPeriod(financialCostPeriod) :
+    {start:co('coFrom').value,end:co('coTo').value};
+  downloadCenterInsightCSV(controller.exportName, rows, range);
+}
+
+function enhanceFinancialTables(root, contextTitle) {
+  root = root || co(financialModule === 'Overall Revenue' ? 'financialRevenueModule' : 'financialOtherModule');
+  if (!root) return;
+  const filterScope = JSON.stringify([
+    co('coFrom').value, co('coTo').value, co('coCenter').value, co('coCity').value, co('coZone').value,
+    financialHeaderClientType, financialHeaderClient, financialView, financialTrail,
+    financialCostPeriod, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
+    Array.from(financialMultiFilters, ([id,values]) => [id, values ? [...values].sort() : 'all'])
+  ]);
+  const tables = Array.from(root.querySelectorAll('table.co-financial-table'));
+  tables.forEach((table, index) => {
+    const detail = table.closest('.cost-breakdown');
+    const key = [contextTitle || financialModule, financialModule === 'Cost Analysis' ? financialExpenseView : '',
+      detail ? detail.id : index].join(':');
+    let state = financialTablePageStates.get(key);
+    if (!state) {
+      state = {page:1, size:10, scope:filterScope};
+      financialTablePageStates.set(key, state);
+    } else if (state.scope !== filterScope) {
+      state.page = 1;
+      state.scope = filterScope;
+    }
+    let controller = financialTableControllers.get(table);
+    if (!controller) {
+      controller = {table, groups:[], state};
+      financialTableControllers.set(table, controller);
+      const wrap = table.closest('.co-table-wrap');
+      const label = detail?.querySelector('h4')?.textContent || contextTitle ||
+        (financialModule === 'Inventory' && index === 1 ? 'Monthly Branch Stock Comparison' : financialModule);
+      table.setAttribute('aria-label', label);
+      controller.module = contextTitle || financialModule;
+      controller.exportName = 'financial-' + label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'');
+
+      // Pivot already owns a scope-aware CSV export; do not duplicate it.
+      const hasPivotExport = financialModule === 'Cost Analysis' && financialExpenseView === 'pivot' && !contextTitle;
+      if (!hasPivotExport) {
+        const tools = document.createElement('div');
+        tools.className = 'financial-table-actions';
+        const exportButton = document.createElement('button');
+        exportButton.type = 'button';
+        exportButton.className = 'co-btn financial-table-export';
+        exportButton.innerHTML = dashboardIcon('Download') + '<span>Export CSV</span>';
+        exportButton.setAttribute('aria-label', 'Export all filtered rows: ' + label);
+        exportButton.title = 'Export all filtered rows, including totals';
+        exportButton.addEventListener('click', () => exportFinancialDataTable(controller));
+        tools.appendChild(exportButton);
+        wrap.insertAdjacentElement('beforebegin', tools);
+        controller.exportButton = exportButton;
+      }
+      const footer = document.createElement('div');
+      footer.className = 'financial-table-footer';
+      const info = document.createElement('div');
+      info.className = 'financial-table-range';
+      const status = document.createElement('span');
+      status.setAttribute('role','status');
+      const totalNote = document.createElement('small');
+      totalNote.textContent = table.tFoot ? 'Totals include all filtered rows' : '';
+      info.append(status,totalNote);
+      const controls = document.createElement('div');
+      controls.className = 'financial-table-pagination';
+      const sizeLabel = document.createElement('label');
+      sizeLabel.appendChild(document.createTextNode('Rows'));
+      const sizeSelect = document.createElement('select');
+      sizeSelect.setAttribute('aria-label','Rows per page: ' + label);
+      for (const size of [5,10,25,50]) sizeSelect.appendChild(new Option(String(size),String(size)));
+      sizeSelect.addEventListener('change', () => {
+        controller.state.size = Number(sizeSelect.value);
+        controller.state.page = 1;
+        controller.render();
+      });
+      sizeLabel.appendChild(sizeSelect);
+      controls.appendChild(sizeLabel);
+      const pageLabel = document.createElement('span');
+      pageLabel.className = 'financial-table-page-label';
+      controller.buttons = [];
+      for (const [action,labelText,path] of [
+        ['first','First page','M6 5v14m12-14-7 7 7 7'], ['previous','Previous page','m15 5-7 7 7 7'],
+        ['next','Next page','m9 5 7 7-7 7'], ['last','Last page','M18 5v14M6 5l7 7-7 7']
+      ]) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'financial-table-page-button';
+        button.setAttribute('aria-label', labelText + ': ' + label);
+        button.title = labelText;
+        button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + path + '"/></svg>';
+        button.addEventListener('click', () => {
+          const pageWindow = financialTablePageWindow(controller.groups.length, controller.state.page, controller.state.size);
+          controller.state.page = action === 'first' ? 1 : action === 'last' ? pageWindow.pages :
+            pageWindow.page + (action === 'next' ? 1 : -1);
+          controller.render();
+        });
+        if (action === 'next') controls.appendChild(pageLabel);
+        controls.appendChild(button);
+        controller.buttons.push(button);
+      }
+      footer.append(info,controls);
+      wrap.insertAdjacentElement('afterend',footer);
+      controller.status = status;
+      controller.pageLabel = pageLabel;
+      controller.sizeSelect = sizeSelect;
+      controller.render = () => {
+        const page = financialTablePageWindow(controller.groups.length, controller.state.page, controller.state.size);
+        controller.state.page = page.page;
+        controller.groups.forEach((group, rowIndex) => {
+          const visible = rowIndex >= page.start && rowIndex < page.end;
+          group.row.hidden = !visible;
+          const expanded = !!group.row.querySelector('[aria-expanded="true"]');
+          group.details.forEach(row => { row.hidden = !visible || !expanded; });
+        });
+        controller.sizeSelect.value = String(controller.state.size);
+        controller.status.textContent = controller.groups.length ?
+          'Showing ' + (page.start+1) + '–' + page.end + ' of ' + controller.groups.length : '0 rows';
+        controller.pageLabel.textContent = 'Page ' + page.page + ' of ' + page.pages;
+        controller.buttons.forEach((button,index) => { button.disabled = index < 2 ? page.page === 1 : page.page === page.pages; });
+        if (controller.exportButton) controller.exportButton.disabled = !controller.groups.length;
+      };
+    }
+    controller.state = state;
+    controller.groups = financialTableRowGroups(Array.from(table.tBodies).flatMap(body => Array.from(body.rows)));
+    controller.render();
+  });
+}
