@@ -152,7 +152,7 @@ function setFinancialSidebarDemoMode(enabled) {
   if (typeof highlightFinancialOverview === 'function') highlightFinancialOverview();
 }
 
-setFinancialSidebarDemoMode(true);
+setFinancialSidebarDemoMode(false);
 
 function mountFinancialBranchComparison() {
   const chart = co('coComparison');

@@ -386,8 +386,9 @@ function financialDrillButton(name, index, nextLevel) {
 
 function renderFinancialReport() {
   syncFinancialGlobalScope();
-  syncFinancialSummaryAlternative();
   syncFinancialHeaderClientOptions(financialLedger(false));
+  syncFinancialSummaryMetrics();
+  syncFinancialSummaryAlternative();
   co('financialRevenueModule').hidden = financialModule !== 'Overall Revenue';
   co('financialOtherModule').hidden = financialModule === 'Overall Revenue';
   [...co('financialModules').children].forEach(button => button.setAttribute('aria-pressed', String(button.textContent === financialModule)));
@@ -494,6 +495,29 @@ function renderFinancialReport() {
   financialVisibleGroups = groups;
   financialFormulaTotals = financialTotals(records);
   enhanceFinancialTables();
+}
+
+function syncFinancialSummaryMetrics() {
+  if (!document.body.classList.contains('financial-overview-only')) return;
+  const filtered = financialTotals(financialLedger());
+  const branches = centerTotal(currentCenterRows);
+  for (const [key,value] of [['Net',filtered.net],['Gross',filtered.gross],['Discount',filtered.discount]]) {
+    co('coHero'+key).textContent = centerMoney(value);
+    co('coHero'+key+'Short').textContent = centerShortMoney(value);
+  }
+  const balance = co('coKpis')?.querySelector('.co-kpi.balance');
+  if (balance) {
+    const value = filtered.net - branches.expenditure;
+    balance.querySelector('strong').textContent = centerMoney(value);
+    balance.classList.toggle('negative',value < 0);
+    balance.classList.toggle('positive',value >= 0);
+  }
+  const kpis = co('coKpis')?.querySelectorAll('.co-kpi');
+  if (kpis?.[1]) kpis[1].querySelector('strong').textContent = centerMoney(branches.expenditure);
+  if (kpis?.[2]) kpis[2].querySelector('strong').textContent = centerNumber(branches.employees);
+  if (kpis?.[3]) kpis[3].querySelector('strong').textContent = centerMoney(branches.salaries);
+  if (kpis?.[1]) kpis[1].querySelector('small').textContent = 'Selected branch costs · includes employee salaries';
+  if (kpis?.[3]) kpis[3].querySelector('small').textContent = 'Selected branch salaries · not allocated by client or test';
 }
 
 let financialVisibleGroups = [];
@@ -1023,13 +1047,17 @@ async function uploadFinancialCpt(file) {
 }
 
 co('financialModules').innerHTML = financialModules.map((label,index) =>
-  '<button type="button" onclick="selectFinancialModule(' + index + ')">' + label.replace('&','&amp;') + '</button>').join('');
+  '<button type="button" onclick="selectFinancialModule(' + index + ')">' +
+  dashboardIcon(['TrendingUp','Receipt','ChartLine','TestTube','Package','Banknote'][index]) +
+  '<span>' + label.replace('&','&amp;') + '</span></button>').join('');
 function selectFinancialModule(index) {
   financialModule = financialModules[index];
   renderFinancialReport();
 }
 co('financialReportTabs').innerHTML = financialViews.map(([key,label]) =>
-  '<button id="financial-tab-' + key + '" type="button" role="tab" aria-controls="financialReportPanel" onclick="selectFinancialReport(\'' + key + '\')">' + label + '</button>').join('');
+  '<button id="financial-tab-' + key + '" type="button" role="tab" aria-controls="financialReportPanel" onclick="selectFinancialReport(\'' + key + '\')">' +
+  dashboardIcon({branch:'MapPin',pro:'Users',client:'ClipboardList',department:'Layers',test:'FlaskConical'}[key]) +
+  '<span>' + label + '</span></button>').join('');
 co('financialClientType').addEventListener('change', () => {
   financialTrail = financialView === 'branch' ? financialTrail.slice(0,1) : [];
   renderFinancialReport();
@@ -1039,6 +1067,7 @@ mountFinancialOverviewHeader();
 const renderCenterBeforeFinancialReport = renderCenterOverview;
 renderCenterOverview = function () {
   const result = renderCenterBeforeFinancialReport.apply(this, arguments);
+  if (!centerDateRange(co('coFrom').value, co('coTo').value)) currentCenterRows = [];
   financialTrail = [];
   renderFinancialReport();
   return result;

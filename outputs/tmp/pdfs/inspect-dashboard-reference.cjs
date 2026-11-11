@@ -1,0 +1,10 @@
+const fs=require('fs');
+const path=require('path');
+const bytes=fs.readFileSync('C:/Users/VEERAIAH/Downloads/fullpage_snapshot_dev-analytics_mryoda_com_2026-11-11-08-59-37.pdf');
+const source=bytes.toString('latin1');
+const match=/19 0 obj\s*<<([\s\S]*?)>>\s*stream\r?\n/.exec(source);
+if(!match || !match[1].includes('/DCTDecode'))throw Error('Expected screenshot JPEG');
+const length=Number(match[1].match(/\/Length (\d+)/)[1]);
+const output=path.join(__dirname,'dashboard-reference.jpg');
+fs.writeFileSync(output,bytes.subarray(match.index+match[0].length,match.index+match[0].length+length));
+console.log(output);

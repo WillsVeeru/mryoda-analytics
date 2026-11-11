@@ -1,0 +1,18 @@
+/* Shared chart-block background, including dynamically rendered report charts. */
+body :is(main,dialog) :is(
+  .glance-chart-card,
+  .rev-chart,
+  .specialty-chart,
+  .tp-chart-card,
+  .tp-chart,
+  .co-chart,
+  .cost-chart,
+  .chart,
+  .home-chart,
+  .app-inline-chart,
+  .all-metric-chart,
+  .donut-layout,
+  #branchChartCanvas
+) {
+  background:linear-gradient(180deg, #fbfdfc, #f7fbf8)!important;
+}

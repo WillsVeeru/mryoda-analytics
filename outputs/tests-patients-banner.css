@@ -1,0 +1,6 @@
+/* Total Bills is featured in the wide banner; retain its source for filter sync. */
+body #tpSummary > .tp-stat:first-child { display:none; }
+body #tpSummary.tp-summary { grid-template-columns:repeat(5,minmax(0,1fr)); }
+@media(max-width:1200px) { body #tpSummary.tp-summary { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:760px) { body #tpSummary.tp-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:480px) { body #tpSummary.tp-summary { grid-template-columns:minmax(0,1fr); } }

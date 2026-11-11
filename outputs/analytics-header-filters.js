@@ -6,3 +6,13 @@ window.analyticsSpecialtyMatches=function(order){let centre=order.centre,city=ce
 
 window.analyticsToday=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 window.analyticsWeekStart=function(value){let date=new Date(value+'T00:00:00Z');date.setUTCDate(date.getUTCDate()-(date.getUTCDay()+6)%7);return date.toISOString().slice(0,10)};
+
+// A city cannot belong to conflicting centre, city and zone selections.
+const analyticsOriginalScopeFactor=window.analyticsScopeFactor;
+window.analyticsScopeFactor=function(){
+  const cities={Hyderabad:'South',Bengaluru:'South',Chennai:'South',Mumbai:'West',Delhi:'North'};
+  const locationFields=['centre','moreCity','moreZone'];
+  if(locationFields.some(id=>document.getElementById(id))&&!Object.entries(cities).some(([city,zone])=>
+    analyticsFilterMatches('centre',city)&&analyticsFilterMatches('moreCity',city)&&analyticsFilterMatches('moreZone',zone)))return 0;
+  return analyticsOriginalScopeFactor();
+};

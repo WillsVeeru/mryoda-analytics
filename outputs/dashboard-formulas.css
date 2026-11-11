@@ -1,0 +1,18 @@
+.dashboard-formula-actions { display:flex; justify-content:flex-start; margin:20px 0 0; }
+.dashboard-formula-actions button { min-height:38px; padding:0 16px; border:1px solid rgb(203 223 242 / 25%); border-radius:12px; background:rgb(255 255 255 / 8%); color:#dcebf7; font-size:12px; cursor:pointer; transition:background .18s ease,border-color .18s ease; }
+.dashboard-formula-actions button:hover { background:rgb(255 255 255 / 15%); border-color:rgb(203 223 242 / 45%); }
+.dashboard-formula-dialog { box-sizing:border-box; width:min(860px,calc(100vw - 32px)); max-height:85vh; padding:26px; border:1px solid #d5e3da; border-radius:24px; color:#15364a; background:#fff; box-shadow:0 24px 80px rgb(19 34 56 / 25%); }
+.dashboard-formula-dialog::backdrop { background:rgb(19 34 56 / 45%); backdrop-filter:blur(4px); }
+.dashboard-formula-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+.dashboard-formula-heading h2 { margin:0 0 8px; font-size:22px; font-weight:500; }
+.dashboard-formula-heading p { margin:0; color:#83958a; font-size:12px; }
+.dashboard-formula-heading button { flex:none; width:34px; height:34px; border:1px solid #dfe8e2; border-radius:10px; color:#557b60; background:#f8fbf9; font-size:22px; cursor:pointer; }
+.dashboard-formula-notice { margin:20px 0; padding:14px 16px; border:1px solid #efe1bf; border-radius:12px; background:#fffaf1; color:#8a5a00; font-size:11px; line-height:1.8; }
+.dashboard-formula-dialog input { box-sizing:border-box; width:100%; height:42px; padding:0 14px; border:1px solid #d5e3da; border-radius:12px; font:inherit; font-size:12px; }
+.dashboard-formula-count { margin:12px 0; color:#83958a; font-size:11px; }
+.dashboard-formula-list h3 { margin:24px 0 10px; color:#39734c; font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+.dashboard-formula-list article { margin:10px 0; padding:16px; border:1px solid #e2e9e4; border-radius:14px; background:#fcfdfc; }
+.dashboard-formula-list h4 { margin:0 0 8px; font-size:13px; font-weight:500; }
+.dashboard-formula-list article > div { color:#2f6498; font-size:12px; line-height:1.8; }
+.dashboard-formula-list article p { margin:8px 0 0; color:#83958a; font-size:11px; line-height:1.7; }
+.dashboard-formula-dialog :is(button,input):focus-visible { outline:2px solid #68a67b; outline-offset:3px; }

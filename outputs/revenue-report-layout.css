@@ -1,0 +1,26 @@
+.revenue-report-toolbar { display:flex; grid-column:1 / -1; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin:0 0 2px; }
+.revenue-report-tabs { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+body .revenue-report-tabs > button { min-height:34px; padding:7px 15px; border:1px solid #dfe8e2; border-radius:999px; background:#fff; color:#25475a; font-size:12px; font-weight:400; line-height:1.4; cursor:pointer; transition:background .18s ease,border-color .18s ease,color .18s ease; }
+body .revenue-report-tabs > button[aria-selected="true"] { background:#2b9e64; border-color:#2b9e64; color:#fff; font-weight:500; box-shadow:0 3px 8px rgb(43 158 100 / 12%); }
+body .revenue-report-tabs > button:hover:not([aria-selected="true"]) { background:#edf6f0; border-color:#bdd8c7; color:#236c39; }
+.revenue-report-view-controls { display:flex; align-items:center; gap:16px; margin-left:auto; }
+.revenue-report-view-status { color:#8a9a91; font-size:10px; white-space:nowrap; }
+body .revenue-report-view-switch { display:inline-flex; align-items:center; gap:10px; min-height:36px; padding:7px 11px; border:1px solid #dce7df; border-radius:12px; background:#fff; color:#52715e; font-size:11px; font-weight:400; cursor:pointer; }
+.revenue-report-switch-track { position:relative; display:block; width:32px; height:18px; border-radius:999px; background:#dce5df; transition:background .2s ease; }
+.revenue-report-switch-track::after { content:""; position:absolute; top:3px; left:3px; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgb(24 59 39 / 18%); transition:transform .2s ease; }
+[aria-checked="true"] > .revenue-report-switch-track { background:#2b9e64; }
+[aria-checked="true"] > .revenue-report-switch-track::after { transform:translateX(14px); }
+.revenue-report-panel { display:grid; grid-template-columns:minmax(0,1fr); grid-column:1 / -1; gap:20px; min-width:0; }
+.revenue-overview-columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; gap:20px; min-width:0; }
+.revenue-overview-left,.revenue-overview-right { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; min-width:0; }
+.revenue-overview-columns .revenue-section { min-width:0; }
+@media(max-width:600px) { .revenue-overview-columns { grid-template-columns:minmax(0,1fr); } }
+.revenue-report-all-title,.revenue-report-group-title { margin:0; color:#15364a; font-size:17px; font-weight:500; letter-spacing:-.025em; }
+.revenue-report-group-title { margin:10px 0 -4px; }
+.revenue-report-panel[hidden],.revenue-report-group-title[hidden],.revenue-report-tabs[hidden],.revenue-report-all-title[hidden] { display:none!important; }
+@media(max-width:600px) {
+  .revenue-report-toolbar { gap:12px; }
+  .revenue-report-view-controls { width:100%; justify-content:space-between; margin-left:0; }
+  body .revenue-report-tabs > button { padding:7px 11px; font-size:11px; }
+}
+@media(prefers-reduced-motion:reduce) { .revenue-report-tabs > button,.revenue-report-switch-track,.revenue-report-switch-track::after { transition:none; } }

@@ -247,3 +247,20 @@ document.addEventListener('pointerover',event=>{let mark=event.target.closest('s
 ids.forEach(id=>{let select=document.getElementById(id),wrap=select.closest('.styled-select');if(!wrap)return;let button=wrap.querySelector('.select-trigger');button.classList.add('multi-select-trigger');button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded','false');button.onclick=event=>{event.preventDefault();active?.id===id?close(true):open(id,button)};button.onkeydown=event=>{if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();open(id,button)}};buttons.set(id,button)});document.addEventListener('pointerdown',event=>{if(active&&!active.menu.contains(event.target)&&!active.button.contains(event.target))close()});document.addEventListener('keydown',event=>{if(active&&event.key==='Escape'){event.preventDefault();event.stopPropagation();close(true)}});document.addEventListener('scroll',event=>{if(active&&!active.menu.contains(event.target))close()},true);window.addEventListener('resize',()=>close());const previousRefresh=refreshHome;refreshHome=function(){let result=previousRefresh.apply(this,arguments);sync();return result};const previousReset=resetAll;resetAll=function(){close();let result=previousReset.apply(this,arguments);sync();return result};sync();})();
 </script><script src="analytics-default-today.js"></script></html>
 <script src="chart-density.js"></script>
+<link rel="stylesheet" href="wide-banner.css">
+<script src="wide-banner.js"></script>
+<link rel="stylesheet" href="financial-dashboard-theme.css">
+<script src="financial-dashboard-theme.js"></script>
+<script src="dashboard-formulas.js"></script>
+<link rel="stylesheet" href="application-table-dates.css">
+<script src="application-table-dates.js"></script>
+<script src="specialty-data-consistency.js"></script>
+<link rel="stylesheet" href="application-sidebar.css">
+<script src="application-sidebar.js"></script>
+<link rel="stylesheet" href="specialty-tabs.css">
+<script src="specialty-tabs.js"></script>
+<link rel="stylesheet" href="application-tabs.css">
+<script src="application-tabs.js"></script>
+<link rel="stylesheet" href="application-chart-backgrounds.css">
+<link rel="stylesheet" href="dashboard-financial-foundation.css">
+<script src="dashboard-financial-foundation.js"></script>

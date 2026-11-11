@@ -1,0 +1,77 @@
+.revenue-reference-section .rev-heading { align-items:flex-start; flex-wrap:wrap; }
+.revenue-reference-section .rev-heading h2 { margin:0; }
+.revenue-reference-section .rev-heading h3 { margin:0; color:#15364a; font-size:16px; font-weight:500; letter-spacing:-.02em; }
+.reference-report-group { display:grid; grid-column:1 / -1; min-width:0; gap:20px; }
+.reference-group-heading { margin:8px 0 -4px; color:#15364a; font-size:17px; font-weight:500; letter-spacing:-.025em; }
+.reference-group-heading span { color:#8a9ca5; font-size:13px; font-weight:400; }
+.revenue-pdf-source-note { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin:0 0 20px; padding:16px 20px; border:1px solid #d5e3da; border-radius:16px; background:#f8fcf9; color:#526f5c; font-size:11px; line-height:1.8; }
+.revenue-pdf-source-note p { margin:0; max-width:1000px; }
+.revenue-pdf-source-note button { flex:none; min-height:36px; padding:0 12px; border:1px solid #c6ddce; border-radius:10px; background:#fff; color:#39734c; font-size:11px; cursor:pointer; }
+.revenue-reference-section .rev-actions { flex:none; }
+.revenue-reference-section .application-table-period { margin-bottom:0; }
+.revenue-reference-section .rev-scroll { max-width:100%; }
+.revenue-reference-section .rev-scroll table { min-width:680px; }
+#reference-section-bookingMonthly .rev-scroll table { min-width:1400px; }
+.revenue-reference-section .rev-scroll td:not(:first-child),.revenue-reference-section .rev-scroll th:not(:first-child) { text-align:right; }
+#reference-section-panels .rev-scroll :is(td,th):nth-child(2),#reference-section-bookers .rev-scroll :is(td,th):nth-child(-n+4) { text-align:left; }
+body .revenue-reference-section .reference-sort { width:100%; min-height:0; display:inline-flex; justify-content:space-between; gap:10px; padding:0; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; letter-spacing:inherit; text-transform:inherit; text-align:inherit; box-shadow:none; cursor:pointer; }
+.reference-sort span { font-size:11px; opacity:.55; }
+body .revenue-reference-section .reference-channel-link { display:inline-flex; align-items:center; gap:9px; padding:3px 0; min-height:0; border:0; background:transparent; color:#286c3c; border-radius:0; font:inherit; cursor:pointer; text-align:left; }
+body .revenue-reference-section .reference-channel-link:hover { color:#184e2a; text-decoration:underline; text-underline-offset:4px; }
+.reference-proxy-tag { display:inline-block; padding:4px 7px; margin-left:7px; border-radius:6px; background:#fff4df; color:#8a5a00; font-size:9px; line-height:1; vertical-align:middle; text-transform:uppercase; letter-spacing:.05em; }
+body .revenue-reference-section .reference-login-row > td { padding:18px!important; background:#f5faf7!important; }
+.reference-login-panel { padding:20px; border:1px solid #c9dfd0; border-radius:16px; background:#fff; }
+.reference-login-panel .rev-heading { margin:0 0 14px; }
+.reference-login-panel h3 { margin:0; color:#15364a; font-size:13px; font-weight:500; }
+.reference-login-panel > .rev-heading > button { min-height:34px; padding:0 12px; border:1px solid #d5e3da; border-radius:10px; background:#fff; color:#39734c; font-size:11px; cursor:pointer; }
+.revenue-reference-section .rev-page-left { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.revenue-reference-section .rev-page-left label { display:inline-flex; align-items:center; gap:6px; font-size:10px; }
+.revenue-reference-section .rev-foot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.revenue-reference-section .rev-chart { position:relative; padding:18px; margin:16px 0; border:1px solid #e2e9e4; }
+.reference-chart-toolbar { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:18px; color:#83958a; font-size:11px; }
+.reference-chart-toolbar label { display:flex; align-items:center; gap:8px; }
+.reference-chart-toolbar select { height:34px; max-width:220px; padding:0 10px; }
+.reference-chart-bars { display:grid; gap:12px; }
+.reference-chart-row { display:grid; grid-template-columns:minmax(120px,220px) minmax(40px,1fr) minmax(70px,110px); align-items:center; gap:14px; font-size:11px; color:#61796c; }
+.reference-chart-row > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reference-chart-row > div { height:18px; border-radius:6px; background:#f0f5f2; }
+.reference-chart-row i { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,#357a4c,#6ba17b); transition:filter .2s ease; }
+.reference-chart-row:hover i { filter:brightness(1.12); }
+.reference-chart-row b { color:#15364a; font-weight:500; text-align:right; font-variant-numeric:tabular-nums; }
+.booking-master-detail { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:stretch; }
+.booking-master-panel,.booking-detail-panel { min-width:0; padding:16px; border:1px solid #e0e8e2; border-radius:16px; background:#fff; }
+.booking-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.booking-panel-heading h4 { margin:0; font-size:12px; font-weight:500; color:#15364a; }
+.booking-panel-heading > span { color:#83958a; font-size:10px; white-space:nowrap; }
+.booking-panel-tools { display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; }
+.booking-panel-tools > span { color:#83958a; font-size:10px; }
+.revenue-reference-section .booking-master-detail .rev-scroll { border:0; border-radius:0; box-shadow:none; }
+.revenue-reference-section .booking-master-detail .rev-scroll table { min-width:0; width:100%; }
+.revenue-reference-section .booking-master-panel .rev-scroll table { min-width:480px; }
+.revenue-reference-section .booking-detail-panel .rev-scroll table { min-width:540px; }
+body .booking-detail-panel .rev-scroll :is(th,td):nth-child(2) { text-align:left; }
+body .booking-master-detail .rev-scroll th { padding:8px; background:#fff; font-size:10px; letter-spacing:0; text-transform:none; font-weight:400; }
+body .booking-master-detail .rev-scroll td { padding:9px 8px; font-size:11px; line-height:1.5; }
+.booking-master-panel tbody tr { cursor:pointer; }
+body .booking-master-panel .booking-channel-selected td,body .booking-master-panel .booking-channel-selected:hover td { background:#e8f4ed!important; color:#236c39; }
+.booking-master-panel tbody tr:focus-visible { outline:2px solid #68a67b; outline-offset:-2px; }
+body .booking-channel-action { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; padding:0; min-height:0; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.booking-channel-action svg { flex:none; opacity:0; transition:opacity .18s ease; }
+.booking-channel-selected .booking-channel-action svg,.booking-master-panel tr:hover .booking-channel-action svg,.booking-channel-action:focus-visible svg { opacity:1; }
+.booking-caption { margin:12px 0 0; color:#83958a; font-size:10px; line-height:1.7; }
+.booking-pagination { align-items:center; gap:10px; padding-top:12px; }
+.booking-pagination .rev-page-left { gap:8px; }
+.booking-pagination .rev-page-left > span { font-size:10px; }
+.booking-pagination .rev-page-nav { display:flex; align-items:center; gap:4px; }
+.booking-pagination .rev-page-nav button { min-width:28px; padding:4px 7px; }
+.booking-pagination .rev-page-nav > span { padding:0 4px; font-size:10px; white-space:nowrap; }
+body .booking-detail-export { flex:none; padding:5px 8px; border:1px solid #d5e3da; border-radius:8px; background:#fff; color:#39734c; font-size:10px; cursor:pointer; }
+.booking-detail-export:disabled { opacity:.4; cursor:default; }
+body .booking-view-users { display:inline-flex; margin-top:10px; padding:3px 0; border:0; border-radius:0; background:transparent; color:#278436; font-size:11px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.booking-view-users:hover { color:#184e2a; }
+@media(max-width:800px) { .booking-master-detail { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:600px) {
+  .reference-login-panel { padding:12px; }
+  .reference-chart-row { grid-template-columns:minmax(80px,120px) minmax(30px,1fr) minmax(60px,90px); gap:8px; font-size:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .reference-chart-row i { transition:none; } }

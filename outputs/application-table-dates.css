@@ -1,0 +1,22 @@
+.application-table-title-block { min-width:0; }
+/* Let report tables grow with their paginated rows; the page owns vertical scrolling. */
+body :is(.table-scroll,.rev-scroll,.specialty-scroll,.co-table-wrap) {
+  height:auto!important;
+  max-height:none!important;
+  min-height:0;
+  overflow-x:auto;
+  overflow-y:visible!important;
+}
+body .home-tables > .home-table { height:auto; max-height:none; }
+body .home-table > .table-scroll { flex:0 0 auto; }
+body main .application-table-period,body dialog .application-table-period {
+  display:block;
+  margin:6px 0 12px;
+  color:#83958a;
+  font:400 11px/1.6 Inter,'DM Sans',Arial,sans-serif;
+  letter-spacing:0;
+  text-transform:none;
+}
+@media(max-width:600px) {
+  body main .application-table-period,body dialog .application-table-period { font-size:10px; }
+}
