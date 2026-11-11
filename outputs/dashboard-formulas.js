@@ -61,7 +61,7 @@
   toolbar.className = 'dashboard-formula-actions';
   const open = document.createElement('button');
   open.type = 'button';
-  open.textContent = tests ? 'Formulas' : 'Financial Formulas';
+  open.textContent = 'FORMULAS';
   open.setAttribute('aria-haspopup', 'dialog');
   toolbar.append(open);
   const titleBlock = banner.querySelector('.dashboard-wide-banner > div') || banner.querySelector(':scope > div');
@@ -71,7 +71,7 @@
   dialog.setAttribute('aria-labelledby', 'dashboardFormulaTitle');
   dialog.innerHTML = '<div class="dashboard-formula-heading"><div><h2 id="dashboardFormulaTitle">Financial Formulas</h2><p></p></div><button type="button" aria-label="Close financial formulas">×</button></div><p class="dashboard-formula-notice">Demo data: some summary and report figures are independently seeded and may not reconcile. Definitions below distinguish intended calculations from current demo allocations. Live values require the source integration.</p><input type="search" aria-label="Search financial formulas" placeholder="Search metrics or formulas…"><div class="dashboard-formula-count" role="status"></div><div class="dashboard-formula-list"></div>';
   document.body.append(dialog);
-  if(tests)dialog.querySelector('#dashboardFormulaTitle').textContent = 'Tests & Patients Formulas';
+  dialog.querySelector('#dashboardFormulaTitle').textContent = tests ? 'Tests & Patients Formulas' : specialty ? 'Specialty Formulas' : 'Revenue & Sales Formulas';
   dialog.querySelector('.dashboard-formula-heading p').textContent = tests ? 'Tests & Patients · Metric definitions and calculation rules' : specialty ? 'Speciality · Metric definitions and calculation rules' : 'Revenue & Sales · Metric definitions and calculation rules';
   dialog.querySelector('.dashboard-formula-notice').textContent = tests
     ? 'KPI cards, the banner and reports use the same filtered test records. Chart selections and search are included. VIP and barcode limitations are documented below.' : specialty
@@ -105,7 +105,7 @@
     dialog.querySelector('[role="status"]').textContent = matches.length ? matches.length + ' formulas' : 'No matching formulas';
   }
   open.addEventListener('click', () => {
-    if(!tests && !specialty && window.revenuePdfSource) dialog.querySelector('.dashboard-formula-notice').textContent='PDF snapshot: 5–11 Nov 2026. Daily/channel/terms revenue totals ₹1,29,73,153; the PDF summary and specialty/booking reports show ₹1,30,28,865. Values are preserved as printed; KPI cards use the selected captured daily rows. Source aggregates and hidden pagination pages cannot supply transaction-level filters.';
+    if(!tests && !specialty && window.revenuePdfSource) dialog.querySelector('.dashboard-formula-notice')?.remove();
     search.value = ''; render(); dialog.showModal(); search.focus();
   });
   dialog.querySelector('button').addEventListener('click', () => dialog.close());

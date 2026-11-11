@@ -1046,6 +1046,7 @@ async function uploadFinancialCpt(file) {
   }
 }
 
+document.querySelectorAll('button[onclick="openFinancialDetails()"]').forEach(button => { button.textContent = 'FORMULAS'; });
 co('financialModules').innerHTML = financialModules.map((label,index) =>
   '<button type="button" onclick="selectFinancialModule(' + index + ')">' +
   dashboardIcon(['TrendingUp','Receipt','ChartLine','TestTube','Package','Banknote'][index]) +
