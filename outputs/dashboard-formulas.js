@@ -69,10 +69,19 @@
   const dialog = document.createElement('dialog');
   dialog.className = 'dashboard-formula-dialog';
   dialog.setAttribute('aria-labelledby', 'dashboardFormulaTitle');
-  dialog.innerHTML = '<div class="dashboard-formula-heading"><div><h2 id="dashboardFormulaTitle">Financial Formulas</h2><p></p></div><button type="button" aria-label="Close financial formulas">×</button></div><p class="dashboard-formula-notice">Demo data: some summary and report figures are independently seeded and may not reconcile. Definitions below distinguish intended calculations from current demo allocations. Live values require the source integration.</p><input type="search" aria-label="Search financial formulas" placeholder="Search metrics or formulas…"><div class="dashboard-formula-count" role="status"></div><div class="dashboard-formula-list"></div>';
+  dialog.innerHTML = '<header class="dashboard-formula-heading"><div><span class="dashboard-formula-eyebrow"></span><h2 id="dashboardFormulaTitle">Financial Formulas</h2><p></p></div><button type="button" aria-label="Close formulas">×</button></header><div class="dashboard-formula-body"><p class="dashboard-formula-notice">Metric definitions and calculation notes.</p><input type="search" aria-label="Search formulas" placeholder="Search metrics or formulas…"><div class="dashboard-formula-count" role="status"></div><div class="dashboard-formula-list"></div></div>';
   document.body.append(dialog);
   dialog.querySelector('#dashboardFormulaTitle').textContent = tests ? 'Tests & Patients Formulas' : specialty ? 'Specialty Formulas' : 'Revenue & Sales Formulas';
-  dialog.querySelector('.dashboard-formula-heading p').textContent = tests ? 'Tests & Patients · Metric definitions and calculation rules' : specialty ? 'Speciality · Metric definitions and calculation rules' : 'Revenue & Sales · Metric definitions and calculation rules';
+  const pageName = tests ? 'Tests & Patients' : specialty ? 'Specialty' : 'Revenue & Sales';
+  dialog.querySelector('.dashboard-formula-eyebrow').textContent = pageName;
+  function syncHeader(){
+    const from=document.getElementById('homeFrom')?.value,to=document.getElementById('homeTo')?.value;
+    const dateFormat=new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+    const valid=from&&to&&from<=to&&!Number.isNaN(Date.parse(from+'T00:00:00Z'))&&!Number.isNaN(Date.parse(to+'T00:00:00Z'));
+    const period=valid?'Selected '+(from===to?'date: ':'dates: ')+dateFormat.format(new Date(from+'T00:00:00Z'))+(from===to?'':' – '+dateFormat.format(new Date(to+'T00:00:00Z'))):'Choose a valid reporting period';
+    dialog.querySelector('.dashboard-formula-heading p').textContent=period+' · Metric definitions and calculation rules';
+  }
+  syncHeader();
   dialog.querySelector('.dashboard-formula-notice').textContent = tests
     ? 'KPI cards, the banner and reports use the same filtered test records. Chart selections and search are included. VIP and barcode limitations are documented below.' : specialty
     ? 'Demo data: specialty KPI cards and reports use the same filtered orders. Routine baseline and component allocations are illustrative. Doctor revenue excludes Self orders; component views overlap with panel revenue.'
@@ -105,6 +114,7 @@
     dialog.querySelector('[role="status"]').textContent = matches.length ? matches.length + ' formulas' : 'No matching formulas';
   }
   open.addEventListener('click', () => {
+    syncHeader();
     if(!tests && !specialty && window.revenuePdfSource) dialog.querySelector('.dashboard-formula-notice')?.remove();
     search.value = ''; render(); dialog.showModal(); search.focus();
   });
