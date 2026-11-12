@@ -21,8 +21,10 @@
   const track=document.createElement('span');track.className='revenue-report-switch-track';track.setAttribute('aria-hidden','true');
   toggle.append(switchLabel,track);controls.append(status,toggle);toolbar.append(tablist,allTitle,controls);container.prepend(toolbar);
   const panels=new Map(),tabs=new Map();
+  const tabIcons={overview:'ChartPie',speciality:'FlaskConical',booking:'ClipboardList',packages:'Package'};
   groups.forEach(group=>{
     const tab=document.createElement('button');tab.type='button';tab.id='revenue-report-tab-'+group.id;tab.textContent=group.label;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','revenue-report-panel-'+group.id);tablist.append(tab);tabs.set(group.id,tab);
+    if(typeof window.dashboardIcon==='function')tab.innerHTML=window.dashboardIcon(tabIcons[group.id])+'<span>'+group.label+'</span>';
     const panel=document.createElement('section');panel.id='revenue-report-panel-'+group.id;panel.className='revenue-report-panel full';
     const heading=document.createElement('h2');heading.className='revenue-report-group-title';heading.id='revenue-report-group-'+group.id;heading.textContent=group.label;panel.append(heading);
     group.tables.forEach(([id,title])=>{

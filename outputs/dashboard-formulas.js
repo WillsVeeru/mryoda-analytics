@@ -14,6 +14,9 @@
     ['Chart metrics', 'Revenue share (%)', 'Group revenue ÷ Total revenue in the same scope × 100', 'Use the same revenue basis and filters for both amounts.']
   ];
   const revenue = [
+    ['KPI comparisons', 'Revenue change', 'Current period revenue − Comparison period revenue', 'Uses the same filters and complete daily data for both periods. Previous period uses the immediately preceding date range of equal length. Month/year comparisons use matching calendar dates, clamped to the last valid day.'],
+    ['KPI comparisons', 'Revenue change (%)', '(Current − Comparison) ÷ Absolute comparison value × 100', 'A zero baseline with nonzero current revenue displays N/A; both zero displays 0%. Missing daily data displays Comparison unavailable.'],
+    ['KPI comparisons', 'Specialty contribution change', 'Current specialty contribution (%) − Comparison contribution (%)', 'The absolute change is shown in percentage points (pp), alongside relative percentage change.'],
     ['Revenue summary', 'Routine net revenue (clean)', 'Sum of daily routine net revenue, excluding Yodaara bookings', 'KPI cards and breakdown totals use the full filtered daily report, including all pages. Routine net already includes refunds and genetics revenue. The segment report separates genetics from this amount.'],
     ['Revenue summary', 'Specialty revenue', 'Sum of net revenue from specialty bookings', 'Specialty bookings must not also be counted as routine revenue.'],
     ['Daily revenue', 'Gross revenue', 'Sum of charges before discounts and refunds', 'Gross is the starting value before deductions.'],

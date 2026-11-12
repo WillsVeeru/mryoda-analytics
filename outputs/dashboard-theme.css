@@ -1,0 +1,260 @@
+/* Financial Overview is the design source. Load this after page-specific CSS. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --dashboard-font:'Inter',Arial,sans-serif;
+  --dashboard-ink:#15364a;
+  --dashboard-muted:#83958a;
+  --dashboard-line:#e1e9e4;
+  --dashboard-green:#357a4c;
+  --dashboard-surface:#fff;
+  --dashboard-background:#f3f7f5;
+  --dashboard-weight-regular:400;
+  --dashboard-weight-medium:500;
+  --dashboard-weight-semibold:600;
+  --dashboard-weight-bold:700;
+  --dashboard-report-title-size:16px;
+  --dashboard-table-body-size:12.5px;
+  --dashboard-table-heading-size:10.5px;
+  --dashboard-caption-size:12px;
+  --dashboard-control-size:12px;
+  --dashboard-pagination-size:11px;
+  --dashboard-kpi-label-size:12px;
+  --dashboard-kpi-value-size:26px;
+  --dashboard-kpi-note-size:11px;
+  --dashboard-table-heading-background:#f6f8f7;
+  --dashboard-table-heading-color:#67766d;
+  --dashboard-table-heading-line:#dde5df;
+  --dashboard-card-radius:24px;
+  --dashboard-chart-background:linear-gradient(180deg,#fbfdfc,#f7fbf8);
+}
+
+/* Legacy font shorthands and inline SVG labels must use the same family. */
+html body,html body * { font-family:var(--dashboard-font)!important; }
+body { color:var(--dashboard-ink); background:var(--dashboard-background); font-size:13px; font-weight:var(--dashboard-weight-regular); }
+body :is(input,select,textarea,button) { font-weight:var(--dashboard-weight-regular); }
+
+html body :is(.dashboard-financial-table,.co-financial-table,.tat-table) thead th {
+  font-size:var(--dashboard-table-heading-size);
+  font-weight:var(--dashboard-weight-bold);
+  line-height:1.4;
+  letter-spacing:.065em;
+  text-transform:uppercase;
+}
+html body :is(.dashboard-financial-table,.co-financial-table,.tat-table) tbody td {
+  font-size:var(--dashboard-table-body-size);
+  font-weight:var(--dashboard-weight-regular);
+  line-height:1.45;
+}
+html body :is(.dashboard-financial-table,.co-financial-table,.tat-table) tbody td:first-child {
+  font-weight:var(--dashboard-weight-semibold);
+}
+/* Preserve the Financial Overview semantic amount emphasis and colours. */
+html body .co-financial-table tbody td[class*="financial-tone-"],
+html body .tat-table tbody td[data-tat-tone]:not([data-tat-tone=""]) {
+  font-weight:var(--dashboard-weight-semibold);
+}
+html body .dashboard-financial-kpi .dashboard-financial-kpi-label,
+html body .co-main .co-kpi .co-kpi-top {
+  font-size:var(--dashboard-kpi-label-size)!important;
+  font-weight:var(--dashboard-weight-medium);
+  line-height:1.5;
+}
+html body .dashboard-financial-kpi .dashboard-financial-kpi-value {
+  font-size:var(--dashboard-kpi-value-size)!important;
+  font-weight:var(--dashboard-weight-bold);
+}
+html body .dashboard-financial-kpi .dashboard-financial-kpi-note,
+html body .co-main .co-kpi small {
+  font-size:var(--dashboard-kpi-note-size)!important;
+  font-weight:var(--dashboard-weight-regular);
+  line-height:1.6;
+}
+
+/* TAT uses the shared financial surfaces, typography and controls. */
+body.tat-operations-page .tat-report {
+  border:1px solid var(--dashboard-line);
+  border-radius:var(--dashboard-card-radius);
+  background:var(--dashboard-surface);
+  box-shadow:0 3px 8px rgb(24 59 39 / 2%),0 14px 32px -20px rgb(24 59 39 / 12%);
+}
+body.tat-operations-page :is(.tat-report h2,.tat-group-title) {
+  color:var(--dashboard-ink);
+  font-size:var(--dashboard-report-title-size);
+  font-weight:var(--dashboard-weight-medium);
+  letter-spacing:-.02em;
+}
+body.tat-operations-page .tat-table thead th {
+  padding:14px 16px;
+  border-bottom:1px solid var(--dashboard-table-heading-line);
+  background:var(--dashboard-table-heading-background);
+  color:var(--dashboard-table-heading-color);
+}
+body.tat-operations-page .tat-table tbody td { padding:16px; border-bottom-color:#edf1ee; }
+/* Apply the source's semantic header tints to every TAT render path. */
+body.tat-operations-page .tat-table thead th[data-tat-header-tone] {
+  --tat-heading-ink:#67766d;
+  --tat-heading-wash:#f6f8f7;
+  --tat-heading-rule:#dde5df;
+  color:var(--tat-heading-ink)!important;
+  background:var(--tat-heading-wash)!important;
+  box-shadow:inset 0 -2px var(--tat-heading-rule);
+}
+body.tat-operations-page .tat-table thead th[data-tat-header-tone="inflow"] { --tat-heading-ink:#2f6498; --tat-heading-wash:#f5f9fd; --tat-heading-rule:#2f6498; }
+body.tat-operations-page .tat-table thead th[data-tat-header-tone="deduction"] { --tat-heading-ink:#8a5a00; --tat-heading-wash:#fffaf1; --tat-heading-rule:#8a5a00; }
+body.tat-operations-page .tat-table thead th[data-tat-header-tone="result"] { --tat-heading-ink:#216b39; --tat-heading-wash:#f3faf5; --tat-heading-rule:#216b39; }
+body.tat-operations-page .tat-table thead th[data-tat-header-tone="cost"] { --tat-heading-ink:#9a4248; --tat-heading-wash:#fff7f7; --tat-heading-rule:#9a4248; }
+body.tat-operations-page .tat-table thead th[data-tat-header-tone="benchmark"] { --tat-heading-ink:#65489a; --tat-heading-wash:#faf8ff; --tat-heading-rule:#65489a; }
+body.tat-operations-page .tat-table thead th button { color:inherit; font-weight:inherit; text-transform:inherit; letter-spacing:inherit; line-height:inherit; }
+body.tat-operations-page .tat-table thead th button span { color:inherit; opacity:.55; }
+/* Tests & Patients: all report tabs use the same source header treatment. */
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone] {
+  --report-heading-ink:#67766d;
+  --report-heading-wash:#f6f8f7;
+  --report-heading-rule:#dde5df;
+  padding:14px 16px;
+  border-bottom:1px solid #dde5df;
+  color:var(--report-heading-ink)!important;
+  background:var(--report-heading-wash)!important;
+  box-shadow:inset 0 -2px var(--report-heading-rule);
+  font-size:var(--dashboard-table-heading-size);
+  font-weight:700;
+  letter-spacing:.065em;
+  line-height:1.4;
+  text-transform:uppercase;
+}
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="inflow"] { --report-heading-ink:#2f6498; --report-heading-wash:#f5f9fd; --report-heading-rule:#2f6498; }
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="deduction"] { --report-heading-ink:#8a5a00; --report-heading-wash:#fffaf1; --report-heading-rule:#8a5a00; }
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="result"] { --report-heading-ink:#216b39; --report-heading-wash:#f3faf5; --report-heading-rule:#216b39; }
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="benchmark"] { --report-heading-ink:#65489a; --report-heading-wash:#faf8ff; --report-heading-rule:#65489a; }
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th button { color:inherit; font-weight:inherit; font-size:inherit; letter-spacing:inherit; line-height:inherit; text-transform:inherit; }
+/* Carry each header's semantic palette through the full table column. */
+[data-dashboard-column-tone="inflow"] { --column-ink:#2f6498; --column-wash:#f5f9fd; --column-hover:#edf5fc; }
+[data-dashboard-column-tone="deduction"] { --column-ink:#8a5a00; --column-wash:#fffaf1; --column-hover:#fff4df; }
+[data-dashboard-column-tone="result"] { --column-ink:#216b39; --column-wash:#f3faf5; --column-hover:#e9f6ed; }
+[data-dashboard-column-tone="cost"] { --column-ink:#9a4248; --column-wash:#fff7f7; --column-hover:#fdeeee; }
+[data-dashboard-column-tone="benchmark"] { --column-ink:#65489a; --column-wash:#faf8ff; --column-hover:#f2edfc; }
+html body:is(.tat-operations-page,.tests-patients-page,.doctors-page) .dashboard-financial-table tbody td[data-dashboard-column-tone]:not([data-dashboard-column-tone="neutral"]) {
+  color:var(--column-ink)!important;
+  background:var(--column-wash)!important;
+}
+html body:is(.tat-operations-page,.tests-patients-page,.doctors-page) .dashboard-financial-table tbody tr:hover td[data-dashboard-column-tone]:not([data-dashboard-column-tone="neutral"]) { background:var(--column-hover)!important; }
+html body:is(.tat-operations-page,.tests-patients-page,.doctors-page) .dashboard-financial-table tbody td[data-dashboard-column-tone]:not([data-dashboard-column-tone="neutral"]) :is(span,strong,b,a) { color:inherit!important; }
+/* Preserve threshold alerts while keeping the complete column background. */
+html body.tat-operations-page .dashboard-financial-table tbody td[data-tat-tone="bad"] { color:#9a4248!important; }
+html body.tat-operations-page .dashboard-financial-table tbody td[data-tat-tone="warn"] { color:#8a5a00!important; }
+body.tat-operations-page :is(.tat-actions button,.tat-detail button,.tat-chart-close) {
+  min-height:34px;
+  padding:7px 12px;
+  border:1px solid #d5e3da;
+  border-radius:10px;
+  color:#39734c;
+  font-size:var(--dashboard-control-size);
+  font-weight:var(--dashboard-weight-regular);
+}
+body.tat-operations-page .tat-chart { background:var(--dashboard-chart-background); border:1px solid rgb(104 139 116 / 16%); border-radius:16px; }
+html body.tat-operations-page .tat-kpis strong.tat-quality-value { font-size:18px!important; }
+body.tat-operations-page :is(.tat-period,[data-static-note],.tat-status span) { font-size:var(--dashboard-caption-size); font-weight:var(--dashboard-weight-regular); }
+
+@media(max-width:600px) {
+  :root { --dashboard-kpi-value-size:24px; }
+  body.tat-operations-page .tat-table tbody td { padding:13px 12px; }
+}
+
+/* Table-value explanations: hover, focus, Enter/Space and tap. */
+html body td.dashboard-formula-value {
+  cursor:help;
+  text-decoration-line:underline;
+  text-decoration-style:dotted;
+  text-decoration-color:rgb(88 117 100 / 45%);
+  text-underline-offset:4px;
+}
+html body td.dashboard-formula-value:focus-visible { outline:2px solid #68a67b; outline-offset:-3px; border-radius:4px; }
+.dashboard-value-tooltip {
+  position:fixed;
+  z-index:30000;
+  box-sizing:border-box;
+  width:max-content;
+  max-width:min(390px,calc(100vw - 24px));
+  padding:17px 19px;
+  border:1px solid #d7e5dc;
+  border-radius:16px;
+  background:#fff;
+  color:#274553;
+  box-shadow:0 8px 16px rgb(24 59 39 / 8%),0 20px 48px rgb(24 59 39 / 12%);
+  pointer-events:none;
+  font-size:12px;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+.dashboard-value-tooltip[hidden] { display:none!important; }
+.dashboard-value-tooltip-title { font-size:13px; font-weight:600; color:#245b3e; margin-bottom:8px; }
+.dashboard-value-tooltip-label { color:#8a9b90; font-size:10px; letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+.dashboard-value-tooltip-formula { color:#526e5d; }
+.dashboard-value-tooltip-calculation { color:#2f6498; font-variant-numeric:tabular-nums; }
+.dashboard-value-tooltip-note { color:#8a9b90; font-size:11px; margin-top:8px; }
+
+/* Financial Overview pagination, shared by every report and detail table. */
+html body :is(.rev-foot,.specialty-foot,.tp-pagination,.tat-page,.financial-table-footer,.co-detail-pagination) {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px 18px;
+  margin-top:14px;
+  padding:14px 4px 0;
+  border-top:1px solid var(--dashboard-line);
+  color:#7c9083;
+  font-size:var(--dashboard-pagination-size);
+  font-weight:400;
+  line-height:1.5;
+}
+html body :is(.rev-page-left,.rev-page-nav,.specialty-foot>div,.tp-pagination>div,.tat-page>div,.financial-table-pagination,.co-detail-pagination>div) { display:flex; align-items:center; flex-wrap:wrap; gap:7px; }
+html body :is(.rev-foot,.specialty-foot,.tp-pagination,.tat-page,.financial-table-footer) label { display:inline-flex; align-items:center; gap:8px; color:#7c9083; font-size:var(--dashboard-pagination-size); }
+html body :is(.rev-foot,.specialty-foot,.tp-pagination,.tat-page,.financial-table-footer) :is(select,.select-trigger) {
+  box-sizing:border-box;
+  width:auto;
+  min-width:76px;
+  height:34px!important;
+  min-height:34px!important;
+  padding:0 12px!important;
+  border:1px solid #d5e3da!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  color:#34694b;
+  font-size:var(--dashboard-control-size);
+  line-height:1.4;
+  box-shadow:0 1px 2px rgb(24 59 39 / 3%);
+}
+html body :is(.rev-page-nav button,.specialty-foot>div:last-child button,.tp-pagination>div:last-child button,.tat-page>div:last-child button,.financial-table-page-button,.co-detail-pagination button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:none;
+  box-sizing:border-box;
+  width:34px;
+  min-width:34px;
+  height:34px;
+  min-height:34px;
+  margin:0;
+  padding:0;
+  border:1px solid #dbe6df;
+  border-radius:11px;
+  background:#fff;
+  color:#3d7450;
+  box-shadow:0 1px 2px rgb(24 59 39 / 3%);
+  cursor:pointer;
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+html body :is(.rev-page-nav button,.specialty-foot>div:last-child button,.tp-pagination>div:last-child button,.tat-page>div:last-child button,.financial-table-page-button,.co-detail-pagination button):hover:not(:disabled) { background:#edf6f0; border-color:#a9cdb4; box-shadow:0 2px 5px rgb(24 59 39 / 7%); }
+html body :is(.rev-page-nav button,.specialty-foot>div:last-child button,.tp-pagination>div:last-child button,.tat-page>div:last-child button,.financial-table-page-button,.co-detail-pagination button):disabled { background:#f7faf8; border-color:#e6ede8; color:#bdccc2; opacity:1; box-shadow:none; cursor:default; }
+html body :is(.rev-page-nav button,.specialty-foot>div:last-child button,.tp-pagination>div:last-child button,.tat-page>div:last-child button,.financial-table-page-button,.co-detail-pagination button):focus-visible { outline:2px solid #68a67b; outline-offset:3px; }
+html body :is(.rev-page-nav,.specialty-foot>div:last-child,.tp-pagination>div:last-child,.tat-page>div:last-child,.financial-table-pagination) > span { color:#72897b; font-size:var(--dashboard-pagination-size); font-weight:500; padding:0 6px; white-space:nowrap; }
+html body :is(.rev-page-left span,.financial-table-range [role="status"],#reportCount) { color:#72897b; font-size:var(--dashboard-pagination-size); }
+@media(max-width:600px) {
+  html body :is(.rev-page-nav,.specialty-foot>div:last-child,.tp-pagination>div:last-child,.tat-page>div:last-child,.financial-table-pagination) { margin-left:auto; }
+}
+@media(prefers-reduced-motion:reduce) { html body [data-dashboard-page-icon],html body .financial-table-page-button { transition:none; } }
+
+html body.doctors-page .dashboard-financial-table tbody td[data-dashboard-negative="true"]{color:#9a4248!important}

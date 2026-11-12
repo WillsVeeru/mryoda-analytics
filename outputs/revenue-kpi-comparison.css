@@ -1,0 +1,15 @@
+.revenue-comparison-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;margin:20px 0 0;padding:12px 16px;border:1px solid #e1eae4;border-radius:16px;background:#fbfdfc;color:#526b60;font-size:12px}
+.revenue-comparison-controls>label{font-weight:500}
+.revenue-comparison-controls select{min-width:190px;min-height:36px;padding:7px 12px;background:#fff;border:1px solid #d6e4db;border-radius:12px;color:#234c3b}
+.revenue-comparison-custom{display:flex;gap:10px;flex-wrap:wrap}
+.revenue-comparison-custom[hidden]{display:none}
+.revenue-comparison-custom label{display:flex;align-items:center;gap:7px}
+.revenue-comparison-custom input{min-width:140px;padding:7px 10px}
+.revenue-comparison-context{font-size:11px;color:#71877a;margin-left:auto}
+.revenue-kpi-change{margin-top:10px;font-size:11px;line-height:1.6;font-weight:400;color:#6d8077;font-variant-numeric:tabular-nums}
+.revenue-kpi-change[data-change="up"]{color:#218153}
+.revenue-kpi-change[data-change="down"]{color:#b34e59}
+.wide-banner-summary .revenue-kpi-change{color:#ccdacd}
+.wide-banner-summary .revenue-kpi-change[data-change="up"]{color:#a7e4ba}
+.wide-banner-summary .revenue-kpi-change[data-change="down"]{color:#ffbcc4}
+@media(max-width:760px){.revenue-comparison-context{margin-left:0;flex-basis:100%}.revenue-comparison-controls{padding:12px}}
