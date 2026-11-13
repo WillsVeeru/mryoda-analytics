@@ -258,3 +258,11 @@ html body :is(.rev-page-left span,.financial-table-range [role="status"],#report
 @media(prefers-reduced-motion:reduce) { html body [data-dashboard-page-icon],html body .financial-table-page-button { transition:none; } }
 
 html body.doctors-page .dashboard-financial-table tbody td[data-dashboard-negative="true"]{color:#9a4248!important}
+/* Preserve target indicators when a full-column tint or inherited span colour applies. */
+html body .co-financial-table td .financial-target-difference.positive{color:#216b39!important}
+html body .co-financial-table td .financial-target-difference.warning{color:#9a4248!important}
+html body .co-financial-table td .financial-target-difference.neutral{color:#83958a!important}
+html body .co-financial-table td .financial-target-status.pill{display:inline-flex;padding:4px 9px;border-radius:999px;font-size:var(--dashboard-caption-size);line-height:1.5;white-space:nowrap}
+html body .co-financial-table td .financial-target-status.pill.positive{color:#216b39!important;background:#e8f5ec!important}
+html body .co-financial-table td .financial-target-status.pill.warning{color:#8a5a00!important;background:#fff3df!important}
+html body .co-financial-table td .financial-target-status.pill.neutral{color:#718579!important;background:#f1f4f3!important}

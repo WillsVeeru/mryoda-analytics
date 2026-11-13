@@ -32,6 +32,16 @@
     const final=item(/^final net$/),special=item(/^specialty net$/);
     if(all(final,special))add(/^routine net$/,'Routine net revenue','Final net − Specialty net',money(final)+' − '+money(special),final-special);
     const cost=item(/^cost$/),referral=item(/^referral$/);
+    const targetAmount=item(/^(?:period )?target$/);
+    if(!context.targetFooter&&all(net,targetAmount)){
+      add(/^difference$/,'Target difference','Net Revenue − Target',money(net)+' − '+money(targetAmount),net-targetAmount);
+      const position=find(/^shortfall\s*\/\s*excess$/),positionLabel=net<targetAmount?'Shortfall':net>targetAmount?'Excess':'On target';
+      if(position>=0&&normal(texts[position])===normal(positionLabel))output.set(position,{title:'Shortfall / Excess',formula:'Classify Net Revenue − Target',calculation:money(net)+' − '+money(targetAmount)+' = '+money(net-targetAmount)+' → '+positionLabel,note:''});
+      add(/^target shortfall$/,'Target shortfall','Max(Target − Net Revenue, 0)','Max('+money(targetAmount)+' − '+money(net)+', 0)',Math.max(targetAmount-net,0));
+      add(/^target excess$/,'Target excess','Max(Net Revenue − Target, 0)','Max('+money(net)+' − '+money(targetAmount)+', 0)',Math.max(net-targetAmount,0));
+      const index=find(/^status$/),status=net<targetAmount?'Below target':net>targetAmount?'Above target':'Target met';
+      if(index>=0&&normal(texts[index])===normal(status))output.set(index,{title:'Target status',formula:'Compare Net Revenue with Target',calculation:money(net)+' '+(net<targetAmount?'<':net>targetAmount?'>':'=')+' '+money(targetAmount)+' = '+status,note:''});
+    }
     if(all(net,cost))add(/^margin$/,'Margin','Net revenue − Cost',money(net)+' − '+money(cost),net-cost);
     if(all(net,referral)){
       const includeCost=!!context.marginIncludesCost;
@@ -138,7 +148,7 @@
       const context=contextFor(table);
       for(const section of [...table.tBodies,table.tFoot].filter(Boolean))for(const row of section.rows){
         const cells=[...row.cells];if(cells.length!==labels.length||cells.some(cell=>cell.colSpan!==1))continue;
-        for(const [index,value]of calculate(labels,cells.map(cell=>cell.textContent),context))mark(cells[index],value);
+        for(const [index,value]of calculate(labels,cells.map(cell=>cell.textContent),{...context,targetFooter:section===table.tFoot}))mark(cells[index],value);
       }
       // Verified footer totals use the actual displayed operands, never a guessed hidden page.
       const bodyRows=[...table.tBodies].flatMap(body=>[...body.rows]).filter(row=>row.cells.length===labels.length&&[...row.cells].every(cell=>cell.colSpan===1));

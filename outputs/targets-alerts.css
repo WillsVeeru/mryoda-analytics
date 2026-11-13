@@ -1,0 +1,16 @@
+.targets-pro-id{display:block;margin-top:4px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
+.targets-alerts-page .doctors-table{min-width:1150px}
+.targets-alerts-page .co-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 12px;border:1px solid #d5e3da;border-radius:10px;background:#fff;color:#39734c;font-size:var(--dashboard-control-size);text-decoration:none;cursor:pointer}
+.targets-alerts-page .co-btn:hover:not(:disabled){border-color:#bcd8c4;background:#edf6f0}
+.targets-alerts-page .co-btn:disabled{opacity:.5;cursor:default}
+.targets-alerts-page .doctors-table input[type="number"]{width:145px;min-height:34px;padding:6px 10px;border:1px solid #d5e3da;border-radius:10px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+.targets-editor-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
+.targets-editor-head label{display:flex;align-items:center;gap:8px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
+.targets-editor-head input{min-height:34px;padding:6px 10px;border:1px solid #d5e3da;border-radius:10px;background:#fff}
+.financial-target-status{display:inline-flex;padding:4px 9px;border-radius:999px;background:#f1f4f3;color:#718579;font-size:var(--dashboard-caption-size);white-space:nowrap}
+.financial-target-status.positive{background:#e8f5ec;color:#216b39}
+.financial-target-status.warning{background:#fff3df;color:#8a5a00}
+.financial-target-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.financial-target-link svg{width:15px;height:15px}
+.targets-editor-note{margin:0 0 14px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.6}
+@media(max-width:600px){.targets-editor-head{align-items:stretch;flex-direction:column}}

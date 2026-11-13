@@ -47,6 +47,7 @@ let financialModule = 'Overall Revenue';
 let financialTrail = [];
 let financialBranchPath = 'client';
 let financialCostPeriod = 1;
+let financialCustomComparison = null;
 const financialTablePageStates = new Map();
 const financialTableControllers = new WeakMap();
 let financialHeaderClientType = 'all';
@@ -66,7 +67,7 @@ centerLocationMatches = function (center) {
 };
 
 function financialHeaderTypeMatches(row, type = financialHeaderClientType) {
-  return type === 'all' || (type === 'B2B' ? row.type === 'B2B' : row.clientType === type);
+  return type === 'all' || financialClientDisplayType(row) === type || row.clientType === type;
 }
 
 function financialApplyHeaderFilters(records) {
@@ -178,7 +179,7 @@ function mountFinancialOverviewHeader() {
   centerField.insertBefore(centerCaption, co('coCenter'));
 
   const typeField = financialHeaderSelectField('financialHeaderClientType', 'Client Type', [
-    ['all', 'All'], ['B2B', 'B2B'], ['Walk-In', 'Walk-In'], ['Credit Client', 'Credit Client'],
+    ['all', 'All'], ['B2B', 'B2B'], ['PUP','PUP'], ['Walk-In', 'Walk-In'], ['TPA','TPA'], ['Corporate','Corporate'], ['Credit Client', 'Credit Client'],
     ['Cash & Carry', 'Cash & Carry'], ['Rolling Advance', 'Rolling Advance']
   ]);
   const clientField = financialHeaderSelectField('financialHeaderClient', 'Client', [['all', 'All']]);
@@ -290,6 +291,23 @@ resetCenterFilters = function () {
   return financialResetGlobalFilters.apply(this, arguments);
 };
 
+function financialBranchAssignment(row) {
+  // Demo locations retain the source city and all original activity amounts.
+  const locations = {
+    hyderabad: ['AJS WOMAN AND CHILD CLINIC', 'MR YODA', 'YODA AGASTYA LB NAGAR', 'YODA AGATSYA HOSPITAL', 'YODA ARUNA DIAGNOSTICS'],
+    bengaluru: ['YODA BENGALURU DIAGNOSTICS'],
+    chennai: ['YODA CHENNAI DIAGNOSTICS'],
+    mumbai: ['YODA MUMBAI DIAGNOSTICS'],
+    delhi: ['YODA DELHI DIAGNOSTICS']
+  };
+  const branches = locations[row.centerId];
+  if (!branches) return {branchId:row.centerId,branchName:row.center,city:row.city || row.center};
+  const seed = [row.id,row.employeeId,row.category,row.test].join('|');
+  const hash = [...seed].reduce((value,character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0);
+  const index = hash % branches.length;
+  return {branchId:row.centerId+'-branch-'+(index+1),branchName:branches[index],city:row.city || row.center,branchSource:'demo'};
+}
+
 function financialLedger(applyHeaderFilters = true) {
   const allocations = new Map(financialScopedRecords(centerInsightState.records).map(row => [row.employeeId, row.discount]));
   const byEmployee = new Map();
@@ -303,6 +321,7 @@ function financialLedger(applyHeaderFilters = true) {
       const rate = cptRates.get(row.test.toLowerCase());
       return {
         ...row,
+        ...financialBranchAssignment(row),
         ...financialDoctorAssignment(row),
         department: row.category,
         name: row.type === 'Walk-in' ? 'Yoda Walk-In' : row.name,
@@ -325,9 +344,14 @@ function financialTotals(records) {
     cost: sum.cost === null || row.cost === null ? null : sum.cost + row.cost
   }), { tests: 0, gross: 0, discount: 0, net: 0, referral: 0, cost: 0 });
 }
+function financialBranchCounts(records) {
+  const clients = new Set(records.map(row=>row.clientKey).filter(value=>value!==null&&value!==undefined&&value!==''));
+  const pros = new Set(records.map(row=>row.proId).filter(value=>value&&value!=='NO-PRO'&&!/^UNASSIGNED/i.test(value)));
+  return {clients:clients.size,pros:pros.size};
+}
 
 function financialPath() {
-  if (financialView === 'branch') return financialBranchPath === 'client' ? ['branch','client','department','test'] : ['branch','department','test'];
+  if (financialView === 'branch') return ['branch','client','department','test'];
   if (financialView === 'pro') return ['pro','client','department','test'];
   return financialView === 'test' ? ['test'] : [financialView, ...(financialView === 'client' ? ['department','test'] : ['test'])];
 }
@@ -336,10 +360,10 @@ const financialGroupFields = { branch: 'centerId', pro: 'proId', client: 'client
 function financialReportGroups(records, level) {
   const groups = new Map();
   for (const row of records) {
-    const key = row[financialGroupFields[level]];
+    const key = level === 'branch' ? (row.branchId || row.centerId) : row[financialGroupFields[level]];
     if (!groups.has(key)) groups.set(key, {
       key,
-      name: row[{branch:'center',pro:'pro',client:'name',department:'department',test:'test'}[level]],
+      name: level === 'branch' ? (row.branchName || row.center) : row[{pro:'pro',client:'name',department:'department',test:'test'}[level]],
       records: []
     });
     groups.get(key).records.push(row);
@@ -348,11 +372,34 @@ function financialReportGroups(records, level) {
 }
 
 const financialAmount = value => value === null ? '—' : centerMoney(value);
+function financialClientDisplayType(record) {
+  const types = {'b2b':'B2B','pup':'PUP','walk-in':'Walk-In','walk in':'Walk-In','walkin':'Walk-In','tpa':'TPA','corporate':'Corporate'};
+  return types[String(record.type||'').trim().toLowerCase()] || types[String(record.clientType||'').trim().toLowerCase()] || '—';
+}
+function financialPROTarget(group) {
+  return typeof window!=='undefined'&&window.dashboardTargets ? window.dashboardTargets.getPeriodTarget(group.key,co('coFrom').value,co('coTo').value) : null;
+}
+function financialPROTargetStatus(actual,target) {
+  return typeof window!=='undefined'&&window.dashboardTargets ? window.dashboardTargets.assess(actual,target) : {shortfall:null,excess:null,status:'No target',tone:'neutral'};
+}
+function financialPROTargetTotals(groups) {
+  const known=groups.map(group=>({group,target:financialPROTarget(group)})).filter(row=>row.target!==null);
+  if(!known.length)return{target:null,shortfall:null,excess:null,difference:null,status:'No target',tone:'neutral'};
+  const metrics=known.map(({group,target})=>financialPROTargetStatus(group.net,target)),sum=key=>metrics.reduce((total,row)=>total+row[key],0);
+  const shortfall=sum('shortfall'),excess=sum('excess');
+  return{target:known.reduce((sum,row)=>sum+row.target,0),shortfall,excess,difference:excess-shortfall,status:shortfall&&excess?'Mixed':shortfall?'Below target':excess?'Above target':'Target met',tone:shortfall?'warning':'positive'};
+}
+function captureFinancialPROActuals() {
+  if(typeof window==='undefined'||!window.dashboardTargets)return;
+  window.dashboardTargets.captureActuals({from:co('coFrom').value,to:co('coTo').value,records:financialLedger(),centerIds:currentCenterRows.map(row=>row.id),scope:'Financial Overview · current global location, client and activity filters'});
+}
 function financialToneClass(header) {
   const label = String(header || '').replace(/<[^>]*>/g, ' ').trim().toLowerCase();
-  if (/net margin|margin|profit|available credit|net cash movement|net revenue|^net$/.test(label)) return 'financial-tone-result';
+  if (/^shortfall\s*\/\s*excess$/.test(label)) return 'financial-tone-benchmark';
+  if (label === 'difference') return 'financial-tone-inflow';
+  if (/net margin|margin|profit|available credit|net cash movement|net revenue|target excess|^net$/.test(label)) return 'financial-tone-result';
   if (/discount|referral/.test(label)) return 'financial-tone-deduction';
-  if (/cost|expense|cash paid|consumption|stock used|outstanding/.test(label)) return 'financial-tone-cost';
+  if (/cost|expense|cash paid|consumption|stock used|outstanding|target shortfall/.test(label)) return 'financial-tone-cost';
   if (/gross|revenue|cash received|cash brought in/.test(label)) return 'financial-tone-inflow';
   if (/target|credit limit/.test(label)) return 'financial-tone-benchmark';
   return '';
@@ -389,6 +436,7 @@ function renderFinancialReport() {
   syncFinancialHeaderClientOptions(financialLedger(false));
   syncFinancialSummaryMetrics();
   syncFinancialSummaryAlternative();
+  captureFinancialPROActuals();
   co('financialRevenueModule').hidden = financialModule !== 'Overall Revenue';
   co('financialOtherModule').hidden = financialModule === 'Overall Revenue';
   [...co('financialModules').children].forEach(button => button.setAttribute('aria-pressed', String(button.textContent === financialModule)));
@@ -403,8 +451,8 @@ function renderFinancialReport() {
   co('financialClientFilter').hidden = !clientFilter;
   const type = clientFilter ? co('financialClientType').value : 'all';
   const records = financialLedger().filter(row =>
-    (type === 'all' || (type === 'B2B' ? row.type === 'B2B' : row.clientType === type)) &&
-    financialTrail.every(step => row[financialGroupFields[step.level]] === step.key)
+    financialHeaderTypeMatches(row,type) &&
+    financialTrail.every(step => (step.level === 'branch' ? (row.branchId || row.centerId) : row[financialGroupFields[step.level]]) === step.key)
   );
   co('financialReportPanel').setAttribute('aria-labelledby', 'financial-tab-' + financialView);
   for (const [key] of financialViews) {
@@ -413,43 +461,46 @@ function renderFinancialReport() {
     tab.tabIndex = key === financialView ? 0 : -1;
   }
   const rootLabel = {branch:'All branches', pro:'All PROs', client:'All clients', department:'All departments', test:'All tests'}[financialView];
-  let controls = financialTrail.length ? '<button type="button" class="co-btn" onclick="financialBack()">Back</button>' +
-    '<nav class="financial-breadcrumbs" aria-label="Financial report breadcrumbs"><ol><li>' +
+  let controls = financialTrail.length ? '<nav class="financial-breadcrumbs" aria-label="Financial report breadcrumbs"><ol><li>' +
     '<button type="button" data-financial-depth="0" onclick="navigateFinancialBreadcrumb(0)">' + rootLabel + '</button></li>' +
-    financialTrail.map((step, index) => '<li><span aria-hidden="true">&#8250;</span>' +
+    financialTrail.map((step, index) => '<li><svg class="financial-breadcrumb-separator" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 4 4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       (index === financialTrail.length - 1 ?
         '<span class="financial-breadcrumb-current" aria-current="page" tabindex="-1" data-financial-depth="' + (index + 1) + '">' + centerEscape(step.name) + '</span>' :
         '<button type="button" data-financial-depth="' + (index + 1) + '" onclick="navigateFinancialBreadcrumb(' + (index + 1) + ')">' +
         centerEscape(step.name) + '</button>') + '</li>').join('') + '</ol></nav>' : '';
-  if (financialView === 'branch') controls += '<label>Drill down by <select onchange="changeFinancialBranchPath(this.value)"><option value="client"' +
-    (financialBranchPath === 'client' ? ' selected' : '') + '>Client then department</option><option value="department"' +
-    (financialBranchPath === 'department' ? ' selected' : '') + '>Department directly</option></select></label>';
   co('financialDrillControls').innerHTML = controls;
+  co('financialDrillControls').hidden = !controls;
 
   const proSummary = level === 'pro';
   const proDetail = financialView === 'pro' && !proSummary;
-  const showCost = level === 'branch' || (level === 'test' && financialView !== 'department') || (level === 'client' && !proDetail);
-  const showReferral = !proDetail && (proSummary || level === 'client' || financialView === 'client' && level === 'department' || financialView === 'department' && level === 'test');
-  const showCount = level === 'branch' || level === 'test';
+  const departmentMetrics = level === 'department' && !proDetail;
+  const showCost = level === 'branch' || proSummary || level === 'test' || departmentMetrics || (level === 'client' && !proDetail);
+  const showReferral = !proDetail && (level === 'branch' || proSummary || level === 'client' || departmentMetrics || level === 'test');
+  const showCount = level === 'branch' || level === 'client' || proSummary || level === 'test' || departmentMetrics;
   const showMargin = level === 'branch' || showReferral;
   const marginLabel = showReferral ? 'Net Margin' : 'Margin';
-  const clientNetMargin = financialView === 'client' && showReferral;
+  const clientNetMargin = showCost && showReferral;
   const marginFormula = showReferral ? (clientNetMargin ? 'Net − Cost − Referral' : 'Net − Referral') : 'Net − Cost';
   const showCredit = level === 'client' && type === 'Credit Client';
   const headers = [financialViews.find(([key]) => key === level)[2]];
+  if (level === 'branch') headers.push('Clients');
   if (level === 'client') headers.push('Type','PRO');
   if (showCount) headers.push('Tests');
   if (proSummary) headers.push('Target');
-  headers.push('Gross','Discount','Net');
+  headers.push('Gross','Discount','Net Revenue');
   if (showCost) headers.push('Cost');
   if (showReferral) headers.push('Referral');
   if (showMargin) headers.push(marginLabel);
+  if (proSummary) headers.push('Shortfall / Excess','Difference');
   if (showCredit) headers.push('Credit Limit', 'Outstanding Amount', 'Available Credit', 'Credit Status', 'Review');
-  const days = centerDateRange(co('coFrom').value, co('coTo').value)?.length || 0;
   function values(group, label, target, groupIndex = null) {
     const row = [label];
+    if (level === 'branch') {
+      const counts = financialBranchCounts(group.records);
+      row.push(centerNumber(counts.clients));
+    }
     if (level === 'client') {
-      const types = new Set(group.records.map(record => record.clientType));
+      const types = new Set(group.records.map(financialClientDisplayType));
       const pros = new Set(group.records.map(record => record.pro));
       const assigned = new Set(group.records.map(record => record.proId));
       const proName = pros.size === 1 ? centerEscape([...pros][0]) : '—';
@@ -465,14 +516,27 @@ function renderFinancialReport() {
     if (showCost) row.push(financialAmount(group.cost));
     if (showReferral) row.push(financialAmount(group.referral));
     if (showMargin) row.push(financialAmount(showReferral ? financialNetMargin(group, clientNetMargin) : (group.cost === null ? null : group.net - group.cost)));
+    if(proSummary){
+      const difference=group.targetSummary?group.targetSummary.difference:target===null?null:group.net-target;
+      const label=difference===null?'No target':difference<0?'Shortfall':difference>0?'Excess':'On target',tone=difference===null?'neutral':difference<0?'warning':'positive';
+      row.push('<span class="financial-target-status pill '+tone+'">'+label+'</span>','<span class="financial-target-difference '+tone+'">'+(difference===null?'—':(difference>0?'+':'')+financialAmount(difference))+'</span>');
+    }
     return row;
   }
   const groups = financialReportGroups(records, level);
-  const targetFor = group => group.key === 'NO-PRO' ? null : 50000 * days;
+  const targetFor = financialPROTarget;
+  const targetTotals = proSummary ? financialPROTargetTotals(groups) : null;
   const cells = (row, tag) => financialCells(row, tag, headers);
   co('financialReportHead').innerHTML = '<tr>' + cells(headers,'th') + '</tr>';
   co('financialReportRows').innerHTML = groups.map((group, index) => {
-    const name = centerEscape(group.name);
+    let name = centerEscape(group.name);
+    if (level === 'branch') {
+      const record = group.records[0] || {};
+      const branch = typeof centerDefinitions !== 'undefined' ? centerDefinitions.find(item => item.id === group.key) : null;
+      const city = record.city || branch?.city || branch?.name || '';
+      name = '<span class="financial-branch-name" title="' + centerEscape(group.name) + '">' + name + '</span>' +
+        (city ? ' <span class="financial-branch-city">' + centerEscape(city) + '</span>' : '');
+    }
     const label = drillable ? financialDrillButton(name, index, path[financialTrail.length + 1]) : name;
     const row = values(group, label, targetFor(group), index);
     if (showCredit) {
@@ -484,12 +548,13 @@ function renderFinancialReport() {
     }
     return '<tr>' + cells(row, 'td') + '</tr>';
   }).join('') || '<tr><td class="co-empty" colspan="' + headers.length + '">No records match this scope.</td></tr>';
-  co('financialReportTotals').innerHTML = '<tr>' + cells([...values({ ...financialTotals(records), records }, 'Total',
-    groups.reduce((sum, group) => sum + (targetFor(group) || 0), 0)), ...(showCredit ? ['—', '—', '—', '—', ''] : [])], 'td') + '</tr>';
+  co('financialReportTotals').innerHTML = '<tr>' + cells([...values({ ...financialTotals(records), records,targetSummary:targetTotals }, 'Total',
+    targetTotals?.target ?? null), ...(showCredit ? ['—', '—', '—', '—', ''] : [])], 'td') + '</tr>';
   co('financialReportNote').textContent = 'Sample LIS activity, targets and Walk-In referrals. Net = gross − discount. ' +
+    (level === 'branch' ? 'Clients are distinct counts. Totals count distinct clients across all filtered branches. ' : '') +
     (showCost ? 'CPT cost = tests × rate. ' : '') +
     (showMargin ? marginLabel + ' = ' + marginFormula + '. ' : '') +
-    (clientFilter ? 'B2B includes Cash & Carry, Rolling Advance and Credit Client accounts.' : '') +
+    (proSummary ? 'Difference = Net Revenue − Target: negative is Shortfall; positive is Excess; zero is On target. Targets cover the full PRO period; revenue follows current filters. Difference totals include only PROs with targets. ' : '') +
     (showCredit ? ' Sample credit balances are account snapshots. Near Limit starts at 80% usage.' : '') +
     ' Doctor assignments are illustrative until a live directory is connected.';
   financialVisibleGroups = groups;
@@ -550,7 +615,7 @@ function navigateFinancialBreadcrumb(depth) {
   target?.focus();
 }
 function changeFinancialBranchPath(value) {
-  financialBranchPath = value;
+  financialBranchPath = 'client';
   financialTrail = financialTrail.slice(0, 1);
   renderFinancialReport();
 }
@@ -562,6 +627,13 @@ function selectFinancialReport(key, focus = false) {
 }
 
 function financialPeriod(months, previous = false) {
+  if (months === 'custom') {
+    const dates = financialCustomComparison;
+    if (!dates) return null;
+    const start = dates[previous ? 'previousFrom' : 'currentFrom'];
+    const end = dates[previous ? 'previousTo' : 'currentTo'];
+    return financialValidComparisonDate(start) && financialValidComparisonDate(end) && start <= end ? {start,end} : null;
+  }
   const endDate = new Date(co('coTo').value + 'T00:00:00Z');
   if (Number.isNaN(+endDate)) return null;
   if (months === 'daily' || months === 'weekly') {
@@ -644,6 +716,12 @@ function exportFinancialCostPivot() {
   const data = financialCostPivotData(branches);
   const total = data.total[data.total.length - 1];
   const rows = [data.headers, ...data.rows, data.total];
+  const table = co('financialOtherModule').querySelector('table.co-financial-table');
+  const state = table && financialTableControllers.get(table)?.state;
+  if (Number.isInteger(state?.sortColumn)) {
+    const sorted = data.rows.slice().sort((a,b)=>financialSortCompare(a[state.sortColumn],b[state.sortColumn],state.sortDirection));
+    rows.splice(1,data.rows.length,...sorted);
+  }
   const output = financialPivotMeasure === 'share' ? rows.map((row, index) => index === 0 ? row :
     row.map((value, column) => column === 0 ? value : (total ? value / total * 100 : 0).toFixed(1) + '%')) : rows;
   downloadCenterInsightCSV('cost-pivot-' + financialPivotMeasure, output, period);
@@ -683,13 +761,13 @@ function financialCostTrend(period) {
   const points = [];
   const start = new Date(period.start + 'T00:00:00Z');
   const end = new Date(period.end + 'T00:00:00Z');
-  const monthly = financialCostPeriod > 1;
+  const monthly = financialCostPeriod === 'custom' ? (end-start)/86400000 >= 45 : financialCostPeriod > 1;
   for (let date = new Date(start); date <= end;) {
     const from = date.toISOString().slice(0, 10);
-    const to = monthly ? new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).toISOString().slice(0, 10) : from;
+    const to = monthly ? [new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).toISOString().slice(0, 10),period.end].sort()[0] : from;
     points.push({label: date.toLocaleDateString('en-GB', monthly ? {month:'short', year:'2-digit', timeZone:'UTC'} : {day:'numeric', month:'short', timeZone:'UTC'}),
       amount: centerTotal(financialOperatingExpenseBranches(financialPeriodCenters({start:from, end:to}))).expenditure});
-    if (monthly) date.setUTCMonth(date.getUTCMonth() + 1);
+    if (monthly) date.setUTCFullYear(date.getUTCFullYear(),date.getUTCMonth()+1,1);
     else date.setUTCDate(date.getUTCDate() + 1);
   }
   const max = Math.max(1, ...points.map(point => point.amount));
@@ -861,32 +939,56 @@ function financialCostPeriodComparison(branches, previousBranches, current, prev
 function financialCostAnalysis() {
   const current = financialPeriod(financialCostPeriod);
   const previous = financialPeriod(financialCostPeriod, true);
-  if (!current || !previous) return '<p>Choose a reporting end date.</p>';
-  const branches = financialPeriodCenters(current);
-  const now = centerTotal(branches);
-  const previousBranches = financialPeriodCenters(previous);
   const controls = '<div class="cost-analysis-toolbar"><div class="cost-analysis-heading">' +
     '<div class="cost-analysis-title"><span class="cost-analysis-mark">' + dashboardIcon('ChartColumn') + '</span>' +
     '<div><h3>Cost Analysis</h3><p>Explore branch expenditure and period performance.</p></div></div>' +
     '<label class="cost-period-field"><span>Comparison period</span><select id="financialCostPeriodSelect" onchange="setFinancialCostPeriod(this.value)">' +
-    [[1,'Monthly'],[3,'Quarterly'],[6,'Half-yearly'],[12,'Yearly']].map(([value,label]) => '<option value="' + value + '"' +
+    [[1,'Monthly'],[3,'Quarterly'],[6,'Half-yearly'],[12,'Yearly'],['custom','Custom Comparison']].map(([value,label]) => '<option value="' + value + '"' +
       (value === financialCostPeriod ? ' selected' : '') + '>' + label + '</option>').join('') + '</select></label></div>' +
     '<div class="co-insight-tabs cost-view-switcher" role="group" aria-label="Cost analysis views">' +
     [['overview','Overview','ChartPie'], ['pivot','Pivot','Layers'], ['branch','By Branch','MapPin'], ['comparison','Period Comparison','ChartColumn']].map(([key,label,icon]) =>
       '<button type="button" data-cost-view="' + key + '" aria-pressed="' + (financialExpenseView === key) +
       '" onclick="selectFinancialExpenseView(\'' + key + '\')">' + dashboardIcon(icon) + '<span>' + label + '</span></button>').join('') + '</div></div>';
-  const scopeNote = '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end +
+  const customControls = financialCustomComparisonControls();
+  if (!current || !previous) return controls + customControls + '<p class="co-custom-comparison-error" role="status">Choose valid From and To dates for both periods. From must be on or before To.</p>';
+  const branches = financialPeriodCenters(current),now = centerTotal(branches),previousBranches = financialPeriodCenters(previous);
+  const scopeNote = customControls + '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end +
     ' · Centre, City and Sales Zone filters apply. Branch expenses are not allocated to individual clients, doctors or test categories.</p>';
   if (financialExpenseView === 'overview') return controls + scopeNote + financialCostOverview(branches, previousBranches, current, previous);
   if (financialExpenseView === 'pivot') return controls + scopeNote + financialCostPivot(branches);
   if (financialExpenseView === 'branch') {
-    return controls + '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end + '</p>' +
+    return controls + customControls + '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end + '</p>' +
       financialBranchExpenses(branches, now);
   }
   return controls + scopeNote + financialCostPeriodComparison(branches, previousBranches, current, previous);
 }
 function setFinancialCostPeriod(value) {
-  financialCostPeriod = [1, 3, 6, 12].includes(Number(value)) ? Number(value) : 1;
+  if (value === 'custom' && !financialCustomComparison) {
+    const currentFrom = co('coFrom').value,currentTo = co('coTo').value;
+    if (financialValidComparisonDate(currentFrom) && financialValidComparisonDate(currentTo) && currentFrom <= currentTo) {
+      const days = Math.round((new Date(currentTo+'T00:00:00Z')-new Date(currentFrom+'T00:00:00Z'))/86400000)+1;
+      const before = new Date(currentFrom+'T00:00:00Z');before.setUTCDate(before.getUTCDate()-1);
+      const previousTo = before.toISOString().slice(0,10);before.setUTCDate(before.getUTCDate()-days+1);
+      financialCustomComparison = {currentFrom,currentTo,previousFrom:before.toISOString().slice(0,10),previousTo};
+    } else financialCustomComparison = {currentFrom:'',currentTo:'',previousFrom:'',previousTo:''};
+  }
+  financialCostPeriod = value === 'custom' ? 'custom' : [1, 3, 6, 12].includes(Number(value)) ? Number(value) : 1;
+  renderFinancialModule();
+}
+function financialValidComparisonDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value||'') && Number.isFinite(+new Date(value+'T00:00:00Z')) && new Date(value+'T00:00:00Z').toISOString().slice(0,10) === value;
+}
+function financialCustomComparisonControls() {
+  if (financialCostPeriod !== 'custom') return '';
+  const dates = financialCustomComparison || {};
+  return '<div class="co-custom-comparison">'+[['current','Current period'],['previous','Comparison period']].map(([key,label])=>
+    '<fieldset><legend>'+label+'</legend>'+[['From','From'],['To','To']].map(([suffix,caption])=>
+      '<label>'+caption+'<input type="date" id="financialCustom-'+key+suffix+'" aria-label="'+label+' '+caption+'" value="'+centerEscape(dates[key+suffix]||'')+'" onchange="setFinancialCustomComparison(\''+key+suffix+'\',this.value)"></label>').join('')+'</fieldset>').join('')+'</div>';
+}
+function setFinancialCustomComparison(field,value) {
+  if (!['currentFrom','currentTo','previousFrom','previousTo'].includes(field)) return;
+  if (!financialCustomComparison) financialCustomComparison = {};
+  financialCustomComparison[field] = value;
   renderFinancialModule();
 }
 
@@ -1084,6 +1186,7 @@ function financialFormulaSections() {
   const money = value => value === null || !Number.isFinite(value) ? 'Not available' : centerMoney(value);
   const percent = (value, total) => total ? (value / total * 100).toFixed(1) + '%' : 'No baseline';
   const ledger = financialLedger(false);
+  const countRecords = financialModule === 'Overall Revenue' ? financialVisibleGroups.flatMap(group=>group.records) : ledger;
   const activity = financialModule === 'Overall Revenue' && financialFormulaTotals ? financialFormulaTotals : financialTotals(ledger);
   const global = centerTotal(currentCenterRows);
   const current = financialPeriod(financialCostPeriod), previous = financialPeriod(financialCostPeriod,true);
@@ -1113,12 +1216,18 @@ function financialFormulaSections() {
       ['Gross Revenue','Net revenue + allocated discounts',money(activity.gross),'Source data is currently synthetic LIS activity.'],
       ['Net Revenue','Gross revenue − discounts',money(activity.net),'Same revenue basis across grouping views.'],
       ['CPT Test Cost','Sum(test count × matching CPT rate)',money(activity.cost),'Missing a rate for a test with activity makes aggregate cost unavailable.'],
-      ['Branch Margin','Net revenue − CPT test cost',money(activity.cost === null ? null : activity.net-activity.cost),'Branch summary margin.'],
-      ['Net Margin · referral basis','Net revenue − referrals',money(financialNetMargin(activity,false)),'PRO summary and department-to-test referral views. Target/referral/margin are hidden below the PRO summary.'],
-      ['Client Net Margin','Net revenue − CPT cost − referrals',money(financialNetMargin(activity,true)),'Client-wise report, including its department breakdown. Branch-to-client currently uses the referral-only margin.'],
+      ['Branch Clients','Count distinct client keys',centerNumber(financialBranchCounts(countRecords).clients),'Uses filtered revenue activity. Walk-In follows the existing grouped client key. Grand total counts distinct clients across branches.'],
+      ['Branch PROs','Count distinct assigned PRO IDs',centerNumber(financialBranchCounts(countRecords).pros),'Uses filtered revenue activity; excludes missing and unassigned PRO IDs. Grand total counts distinct PROs across branches.'],
+      ['Branch Net Margin','Net revenue − CPT test cost − referrals',money(financialNetMargin(activity,true)),'Branch summary includes its referral expense.'],
+      ['PRO Net Margin','Net revenue − CPT test cost − referrals',money(financialNetMargin(activity,true)),'PRO summary includes cost and referral expenses. Target/referral/margin are hidden below the PRO summary.'],
+      ['Department Net Margin','Net revenue − CPT test cost − referrals',money(financialNetMargin(activity,true)),'Department summaries include tests, cost, referral and net margin.'],
+      ['Test Net Margin','Net revenue − CPT test cost − referrals',money(financialNetMargin(activity,true)),'Test-wise reports include cost, referral and net margin. Missing CPT costs keep net margin unavailable.'],
+      ['Client Net Margin','Net revenue − CPT cost − referrals',money(financialNetMargin(activity,true)),'Client summaries and department breakdowns include cost and referral expenses.'],
       ['Average Selling Test','Net revenue ÷ number of tests',money(activity.tests ? activity.net/activity.tests : null),'Unavailable when test count is zero.'],
       ['Walk-In Referral · demo','Round(Walk-In test-record net revenue × 5%), then sum',money(activity.referral),'Other clients currently have zero referral in the sample. Replace with Doctor Referral Portal data.'],
-      ['PRO Target · demo','₹50,000 × inclusive selected days, per assigned PRO','Per PRO','Unassigned PRO has no target; summary total sums assigned PRO targets.'],
+      ['PRO Target','Sum(monthly target × selected days in month ÷ calendar days in month)','Targets & Alerts','Shared browser-saved monthly targets; default demo baseline is ₹50,000 per day. Unassigned PROs have no target.'],
+      ['PRO Difference','Net Revenue − Target','Signed amount per PRO','Negative = shortfall; positive = excess; zero = on target. Totals include only PROs with targets.'],
+      ['Shortfall / Excess','Classify the sign of Difference','Shortfall / Excess / On target','No target is shown for unassigned or unset targets.'],
       ['Discount Allocation · demo','Distribute each employee’s discount in proportion to test-record net revenue','Proportional allocation','Integer allocation preserves the employee discount total.']
     ]},
     {key:'Cost Analysis',title:'Cost Analysis, Pivot & Period Changes',scope:costScope,rows:[
@@ -1132,7 +1241,7 @@ function financialFormulaSections() {
       ['Change (%)','(Current − previous) ÷ previous × 100',change.percentage === null ? 'New spend' : change.percentage.toFixed(1) + '%','Previous = 0 and current > 0: New spend. Both zero: 0.0%. Positive: Increase; negative: Decrease; zero: No change.'],
       ['Total Spend Change','Current total spend − previous total spend',money(spend-priorSpend),'Different basis from the operating-only Overview change.'],
       ['Pivot Share (%)','Cell amount ÷ total spend of all selected branches × 100','Grand-total basis','Not a row-only or branch-only percentage. Footer percentages use totals; do not add rounded percentages.'],
-      ['Comparison Period','Calendar period containing To Date; previous = preceding equal calendar period','Monthly / Quarterly / Half-yearly / Yearly','Full calendar periods; global From Date does not constrain Cost Analysis.'],
+      ['Comparison Period','Calendar selection or two explicit custom date ranges','Monthly / Quarterly / Half-yearly / Yearly / Custom Comparison','Custom ranges apply to Cost Analysis cards, charts, tables and exports. Comparisons use period totals without normalising unequal durations.'],
       ['Chart Trend','Sum of operating allocations for each date/month bucket','Daily or monthly points','Monthly selection shows daily points; longer selections show monthly points. Small rounding differences can arise from per-bucket allocations.'],
       ['Displayed Money','Round to nearest rupee; format using Indian digit grouping','₹','Allocation and display rounding can differ from unrounded source totals.']
     ]},
@@ -1231,6 +1340,7 @@ function openFinancialDetails() {
   co('financialDetailsSource').textContent = 'Values are a snapshot when this panel opens. Revenue, Cost Analysis and other modules can use different scopes, as stated above. Demo estimates are not live financial records. ' +
     (cptUpload ? 'Uploaded CPT workbook: ' + cptUpload + '.' : 'Sample CPT rates are active.');
   filterFinancialFormulas('');
+  mountFinancialFormulaSorting();
   if (!co('financialDetails').open) co('financialDetails').showModal();
 }
 
@@ -1572,6 +1682,67 @@ function financialTableCellText(cell) {
   copy.querySelectorAll('br').forEach(node => node.replaceWith(document.createTextNode(' ')));
   return copy.textContent.replace(/\s+/g, ' ').trim();
 }
+function financialSortValue(text) {
+  const value = String(text??'').trim().replace(/−/g,'-').replace(/^([+-])\s*₹\s*/,'₹$1');
+  if (!value || /^(?:—|–|-|N\/?A|Unavailable|Not available|No baseline|New spend)$/i.test(value)) return null;
+  const numeric = value.match(/^(?:₹\s*)?([+-]?\s*\d[\d,]*(?:\.\d+)?)(?:\s*(Cr|L|K|%|hrs?|hours?|units?))?(?:\s*\([^)]*\))?$/i);
+  if (numeric) return Number(numeric[1].replace(/[,\s]/g,'')) * ({cr:10000000,l:100000,k:1000}[numeric[2]?.toLowerCase()]||1);
+  return value;
+}
+function financialSortCompare(a,b,direction) {
+  const x = financialSortValue(a),y = financialSortValue(b);
+  if (x===null || y===null) return x===y?0:x===null?1:-1;
+  const order = typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),undefined,{numeric:true,sensitivity:'base'});
+  return direction==='asc'?order:-order;
+}
+function sortFinancialTableGroups(controller) {
+  const state = controller.state;
+  if (!Number.isInteger(state.sortColumn)) return;
+  controller.groups.sort((a,b)=>financialSortCompare(
+    financialTableCellText(a.row.cells[state.sortColumn]),financialTableCellText(b.row.cells[state.sortColumn]),state.sortDirection));
+  const body = controller.table.tBodies[0];
+  // Move the branch and its expanded detail together; footers stay outside the sort.
+  const fragment = document.createDocumentFragment();
+  for (const group of controller.groups) {fragment.appendChild(group.row);for(const detail of group.details)fragment.appendChild(detail);}
+  body.appendChild(fragment);
+}
+function mountFinancialSortHeaders(controller) {
+  const headers = Array.from(controller.table.tHead?.rows[0]?.cells||[]);
+  const signature = headers.map(financialTableCellText).join('|');
+  if (controller.state.sortHeaders!==signature) {controller.state.sortHeaders=signature;controller.state.sortColumn=null;controller.state.sortDirection='desc';}
+  headers.forEach((cell,index)=>{
+    let button=cell.querySelector('.financial-column-sort');
+    const label=financialTableCellText(cell);
+    if(!button){
+      button=document.createElement('button');button.type='button';button.className='financial-column-sort';
+      const caption=document.createElement('span');caption.className='financial-sort-label';
+      while(cell.firstChild)caption.appendChild(cell.firstChild);
+      button.appendChild(caption);
+      const indicator=document.createElement('span');indicator.className='financial-sort-indicator';indicator.setAttribute('aria-hidden','true');button.appendChild(indicator);cell.appendChild(button);
+      button.addEventListener('click',()=>{
+        controller.state.sortDirection=controller.state.sortColumn===index&&controller.state.sortDirection==='desc'?'asc':'desc';
+        controller.state.sortColumn=index;controller.state.page=1;
+        mountFinancialSortHeaders(controller);controller.render();
+      });
+    }
+    const selected=controller.state.sortColumn===index,direction=selected?controller.state.sortDirection:null;
+    cell.setAttribute('aria-sort',direction==='desc'?'descending':direction==='asc'?'ascending':'none');
+    const next=direction==='desc'?'Low to High':'High to Low';
+    button.setAttribute('aria-label',label+(selected?' sorted '+(direction==='desc'?'High to Low':'Low to High')+'.':'')+' Sort '+next);
+    button.title='Sort '+label+': '+next;
+    button.querySelector('.financial-sort-indicator').innerHTML='<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="'+(direction==='desc'?'M8 2v12m-4-4 4 4 4-4':direction==='asc'?'M8 14V2m-4 4 4-4 4 4':'M5 13V3m-3 3 3-3 3 3m3-3v10m-3-3 3 3 3-3')+'"/></svg>';
+  });
+}
+function mountFinancialFormulaSorting() {
+  co('financialDetailsMetrics').querySelectorAll('table.co-financial-table').forEach((table,index)=>{
+    const key='formulas:'+index;
+    let state=financialTablePageStates.get(key);
+    if(!state){state={};financialTablePageStates.set(key,state);}
+    const controller={table,state,groups:financialTableRowGroups(Array.from(table.tBodies).flatMap(body=>Array.from(body.rows)))};
+    controller.render=()=>sortFinancialTableGroups(controller);
+    mountFinancialSortHeaders(controller);controller.render();
+  });
+}
 
 function exportFinancialDataTable(controller) {
   const table = controller.table;
@@ -1589,6 +1760,72 @@ function exportFinancialDataTable(controller) {
     {start:co('coFrom').value,end:co('coTo').value};
   downloadCenterInsightCSV(controller.exportName, rows, range);
 }
+function financialChartData(controller) {
+  const headers=Array.from(controller.table.tHead?.rows[0]?.cells||[]).map(financialTableCellText);
+  const indices=headers.map((label,index)=>/^(Action|Review)$/i.test(label)?-1:index).filter(index=>index>=0);
+  const raw=controller.groups.map(group=>indices.map(index=>financialTableCellText(group.row.cells[index])));
+  const columns=indices.map(index=>headers[index]);
+  const types=columns.map((label,index)=>{
+    if(index===0||/^(Type|PRO|Designation|Status|Credit Status|Basis|Notes)$/i.test(label))return 'text';
+    const values=raw.map(row=>row[index]),numericValues=values.filter(value=>typeof financialSortValue(value)==='number'),numeric=numericValues.length>0;
+    if(!numeric&&!/tests|count|clients|patients|gross|net revenue|discount|cost|referral|margin|amount|spend|credit limit|outstanding|cash|target|current period|previous period/i.test(label))return 'text';
+    if(/%|share/i.test(label)||numericValues.length&&numericValues.every(v=>/%$/.test(v)))return 'percent';
+    return values.some(value=>value.includes('₹'))||/gross|net revenue|discount|cost|referral|margin|amount|spend|credit|outstanding|cash|target|current period|previous period/i.test(label)?'money':'number';
+  });
+  const rows=raw.map(row=>row.map((value,index)=>{
+    if(types[index]==='text')return value;
+    const number=financialSortValue(value);
+    return typeof number==='number'&&!(types[index]==='money'&&/%$/.test(value))?number:null;
+  }));
+  const numeric=types.map((type,index)=>type==='text'?-1:index).filter(index=>index>=0);
+  const preferred=columns.findIndex((label,index)=>numeric.includes(index)&&/^(Net Revenue|Net Cash Movement|Total Spend|Amount|Cost per test)$/i.test(label));
+  return{columns,types,rows,metric:preferred>=0?preferred:numeric[0],hasMetrics:numeric.length>0};
+}
+function renderFinancialTableChart(controller) {
+  const model=financialChartData(controller),open=!!controller.state.chart;
+  controller.chartButton.disabled=!controller.groups.length||!model.hasMetrics;
+  controller.chartButton.setAttribute('aria-expanded',String(open));controller.chartHost.hidden=!open;
+  if(!open)return;
+  window.dashboardReportCharts.render(controller.chartHost,{key:controller.chartKey+':'+model.columns.join('|'),title:controller.chartLabel,...model,
+    format:(value,type)=>type==='money'?centerMoney(value):type==='percent'?value.toLocaleString('en-IN',{maximumFractionDigits:2})+'%':value.toLocaleString('en-IN',{maximumFractionDigits:2}),
+    close:'<button type="button" class="co-btn financial-chart-close" data-financial-chart-close="true" aria-label="Close chart">×</button>'});
+  if(controller.module==='Profit & Loss'){
+    const note=document.createElement('p');note.className='co-sales-source-note';note.textContent='Statement lines overlap and are not additive.';controller.chartHost.prepend(note);
+  }
+}
+
+function mountFinancialTableActions(controller,wrap,root,label,key,hasPivotExport) {
+  controller.chartKey=key;controller.chartLabel=label;
+  const chartButton=document.createElement('button');chartButton.type='button';chartButton.className='co-btn financial-table-chart-toggle';
+  chartButton.innerHTML=dashboardIcon('ChartColumn')+'<span>Chart</span>';chartButton.setAttribute('aria-expanded','false');chartButton.setAttribute('aria-label','Show chart: '+label);
+  const chartHost=document.createElement('div');chartHost.className='financial-table-chart rev-chart';chartHost.id='financial-chart-'+key.replace(/[^a-z0-9-]/gi,'-');chartHost.hidden=true;
+  chartButton.setAttribute('aria-controls',chartHost.id);chartButton.addEventListener('click',()=>{controller.state.chart=!controller.state.chart;controller.render();});
+  chartHost.addEventListener('click',event=>{if(event.target.closest('[data-financial-chart-close]')){controller.state.chart=false;controller.render();chartButton.focus();}});
+  controller.chartButton=chartButton;controller.chartHost=chartHost;
+
+  // Pivot already owns a scope-aware CSV export; do not duplicate it.
+  if (!hasPivotExport) {
+    const tools = document.createElement('div');
+    tools.className = 'financial-table-actions';
+    tools.appendChild(chartButton);
+    const exportButton = document.createElement('button');
+    exportButton.type = 'button';
+    exportButton.className = 'co-btn financial-table-export';
+    exportButton.innerHTML = dashboardIcon('Download') + '<span>Export CSV</span>';
+    exportButton.setAttribute('aria-label', 'Export all filtered rows: ' + label);
+    exportButton.title = 'Export all filtered rows, including totals';
+    exportButton.addEventListener('click', () => exportFinancialDataTable(controller));
+    tools.appendChild(exportButton);
+    const revenueToolbar = root.querySelector('#financialRevenueToolbar');
+    if (revenueToolbar) revenueToolbar.appendChild(tools);
+    else wrap.insertAdjacentElement('beforebegin', tools);
+    controller.exportButton = exportButton;
+  } else {
+    const pivotExport=root.querySelector('.cost-pivot-toolbar .cost-export');
+    if(pivotExport)pivotExport.before(chartButton);
+  }
+  wrap.insertAdjacentElement('beforebegin',chartHost);
+}
 
 function enhanceFinancialTables(root, contextTitle) {
   root = root || co(financialModule === 'Overall Revenue' ? 'financialRevenueModule' : 'financialOtherModule');
@@ -1596,7 +1833,7 @@ function enhanceFinancialTables(root, contextTitle) {
   const filterScope = JSON.stringify([
     co('coFrom').value, co('coTo').value, co('coCenter').value, co('coCity').value, co('coZone').value,
     financialHeaderClientType, financialHeaderClient, financialView, financialTrail,
-    financialCostPeriod, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
+    financialCostPeriod, financialCustomComparison, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
     Array.from(financialMultiFilters, ([id,values]) => [id, values ? [...values].sort() : 'all'])
   ]);
   const tables = Array.from(root.querySelectorAll('table.co-financial-table'));
@@ -1622,23 +1859,7 @@ function enhanceFinancialTables(root, contextTitle) {
       table.setAttribute('aria-label', label);
       controller.module = contextTitle || financialModule;
       controller.exportName = 'financial-' + label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,'');
-
-      // Pivot already owns a scope-aware CSV export; do not duplicate it.
-      const hasPivotExport = financialModule === 'Cost Analysis' && financialExpenseView === 'pivot' && !contextTitle;
-      if (!hasPivotExport) {
-        const tools = document.createElement('div');
-        tools.className = 'financial-table-actions';
-        const exportButton = document.createElement('button');
-        exportButton.type = 'button';
-        exportButton.className = 'co-btn financial-table-export';
-        exportButton.innerHTML = dashboardIcon('Download') + '<span>Export CSV</span>';
-        exportButton.setAttribute('aria-label', 'Export all filtered rows: ' + label);
-        exportButton.title = 'Export all filtered rows, including totals';
-        exportButton.addEventListener('click', () => exportFinancialDataTable(controller));
-        tools.appendChild(exportButton);
-        wrap.insertAdjacentElement('beforebegin', tools);
-        controller.exportButton = exportButton;
-      }
+      mountFinancialTableActions(controller,wrap,root,label,key,financialModule === 'Cost Analysis' && financialExpenseView === 'pivot' && !contextTitle);
       const footer = document.createElement('div');
       footer.className = 'financial-table-footer';
       const info = document.createElement('div');
@@ -1691,6 +1912,7 @@ function enhanceFinancialTables(root, contextTitle) {
       controller.pageLabel = pageLabel;
       controller.sizeSelect = sizeSelect;
       controller.render = () => {
+        sortFinancialTableGroups(controller);
         const page = financialTablePageWindow(controller.groups.length, controller.state.page, controller.state.size);
         controller.state.page = page.page;
         controller.groups.forEach((group, rowIndex) => {
@@ -1705,10 +1927,23 @@ function enhanceFinancialTables(root, contextTitle) {
         controller.pageLabel.textContent = 'Page ' + page.page + ' of ' + page.pages;
         controller.buttons.forEach((button,index) => { button.disabled = index < 2 ? page.page === 1 : page.page === page.pages; });
         if (controller.exportButton) controller.exportButton.disabled = !controller.groups.length;
+        renderFinancialTableChart(controller);
       };
     }
     controller.state = state;
     controller.groups = financialTableRowGroups(Array.from(table.tBodies).flatMap(body => Array.from(body.rows)));
+    mountFinancialSortHeaders(controller);
     controller.render();
   });
 }
+
+window.addEventListener('storage',event=>{if(window.dashboardTargets&&event.key===window.dashboardTargets.key)renderFinancialReport();});
+window.addEventListener('dashboardtargetschange',()=>renderFinancialReport());
+{
+  const params=new URLSearchParams(window.location.search),from=params.get('targetFrom'),to=params.get('targetTo');
+  if(financialValidComparisonDate(from)&&financialValidComparisonDate(to)&&from<=to){
+    co('coFrom').value=from;co('coTo').value=to;financialModule='Overall Revenue';financialView='pro';renderCenterOverview();
+  }
+}
+
+for(const button of document.querySelectorAll('.reference-menu'))if(button.getAttribute('onclick')?.includes('targets-alerts.html'))button.onclick=()=>{window.location.href=window.dashboardTargets.link('targets-alerts.html');};

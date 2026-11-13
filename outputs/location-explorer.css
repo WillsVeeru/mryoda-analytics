@@ -1,0 +1,23 @@
+.location-explorer-page .clients-filters input{width:230px}
+.location-explorer-page .clients-filters select{max-width:240px}
+.location-explorer-page .location-table th:first-child,.location-explorer-page .location-table td:first-child{max-width:480px}
+.location-explorer-page .doctors-breadcrumb{padding:8px 10px;margin-bottom:20px;border:1px solid #dce8e0;border-radius:14px;background:#f1f7f3}
+.location-explorer-page .doctors-breadcrumb li{max-width:100%}
+.location-explorer-page .doctors-breadcrumb button{padding:5px 8px;border-radius:8px;overflow-wrap:anywhere;text-decoration:none}
+.location-explorer-page .doctors-breadcrumb button:hover{background:#fff;color:#216b39;text-decoration:underline;text-underline-offset:3px}
+.location-explorer-page .doctors-breadcrumb button:focus-visible{outline:2px solid #348849;outline-offset:2px}
+.location-explorer-page .doctors-breadcrumb [aria-current]{padding:5px 10px;border-radius:8px;background:#e1eee6;color:#244e38;overflow-wrap:anywhere}
+.location-explorer-page .doctors-breakdown-info{padding-left:12px;border-left:3px solid #b7d7c3;margin-bottom:16px}
+.location-explorer-page .doctors-breakdown-info h3{margin-bottom:5px}
+.location-explorer-page .doctors-breakdown-info>p{margin-bottom:0}
+.location-explorer-page .doctors-context-summary{gap:14px;margin-bottom:22px}
+.location-explorer-page .doctors-context-summary>div{padding:14px 16px;border:1px solid #dfe9e3;border-radius:16px;background:linear-gradient(180deg,#fbfdfc,#f3f9f5);box-shadow:0 3px 10px rgb(24 63 43 / 3%)}
+.location-explorer-page .doctors-context-summary>div:nth-child(2){background:linear-gradient(180deg,#fdfcfe,#f7f4fc);border-color:#e7e0f0}
+.location-explorer-page .doctors-context-summary>div:last-child{background:linear-gradient(180deg,#fbfdff,#f0f6fc);border-color:#dce7f2}
+.location-explorer-page .doctors-context-summary dt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.location-summary-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#e8f3ec;color:#397c50}
+.location-summary-icon svg{width:15px;height:15px}
+.location-explorer-page .doctors-context-summary>div:nth-child(2) .location-summary-icon{background:#eee7f7;color:#7652a1}
+.location-explorer-page .doctors-context-summary>div:nth-child(2) dd{color:#65489a}
+.location-explorer-page .doctors-context-summary>div:last-child .location-summary-icon{background:#e4effa;color:#2f6498}
+@media(max-width:800px){.location-explorer-page .clients-filters input{width:100%}}
