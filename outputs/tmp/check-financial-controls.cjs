@@ -48,7 +48,7 @@ context.mountFinancialSortHeaders(controller);assert.equal(header[1].children.le
 // Run the actual Branch-wise rendering and verify referral, margin and totals.
 Object.assign(context,{window:{dispatchEvent(){}},Event:class{constructor(type){this.type=type;}},currentCenterRows:[]});
 vm.runInContext(fs.readFileSync('dashboard-targets.js','utf8'),context);
-for(const name of ['financialHeaderTypeMatches','captureFinancialPROActuals','financialPROTarget','financialPROTargetStatus','financialPROTargetTotals','financialClientDisplayType','financialBranchCounts','financialPath','financialDrillButton','financialTableArrow','renderFinancialReport'])vm.runInContext(extract(name),context);
+for(const name of ['financialHeaderTypeMatches','captureFinancialPROActuals','financialPROTarget','financialPROTargetStatus','financialPROTargetTotals','financialClientDisplayType','financialBranchCounts','financialPath','financialEntityIdMarkup','financialReportMatches','financialDrillButton','financialTableArrow','renderFinancialReport'])vm.runInContext(extract(name),context);
 const records=[{name:'A',type:'B2B',clientType:'Credit Client',clientKey:'CL1',proId:'P1',pro:'Demo PRO',tests:2,gross:1100,discount:100,net:1000,cost:100,referral:50}];
 Object.assign(context,{financialViews:[['branch','Branch wise','Branch']],financialView:'branch',financialModule:'Overall Revenue',financialTrail:[],financialBranchPath:'client',financialGroupFields:{},financialLedger:()=>records,
  syncFinancialGlobalScope(){},syncFinancialHeaderClientOptions(){},syncFinancialSummaryMetrics(){},syncFinancialSummaryAlternative(){},enhanceFinancialTables(){},

@@ -53,5 +53,8 @@ events.click({target:cell,stopPropagation(){}});assert.equal(tooltip.hidden,true
 events.keydown({key:'Enter',target:cell,preventDefault(){},stopPropagation(){}});assert.equal(tooltip.hidden,false);
 row.cells[1].textContent='₹200';row.cells[2].textContent='₹800';notify([{target:body}]);events.focusin({target:cell});assert(tooltip.children.some(n=>n.textContent==='₹1,000 − ₹200 = ₹800'));
 row.cells[2].textContent='Unavailable';notify([{target:body}]);assert(!cell.classes.has('dashboard-formula-value'));assert(!cell.dataset.formulaAddedTabindex);assert.equal(tooltip.hidden,true);
+row.cells[2].textContent='₹800';table.tBodies=[];table.tFoot={rows:[row]};
+for(const value of row.cells){const original=value.closest.bind(value);value.closest=selector=>selector==='tfoot'?table.tFoot:selector==='table.co-financial-table'?table:original(selector);}
+ui.window.dashboardValueFormulas.scan();assert(!cell.classes.has('dashboard-formula-value'),'Financial totals do not receive formula hover decoration');events.pointerover({target:cell});assert(tooltip.hidden);
 for(const file of ['home.html','revenue-sales.html','specialty.html','tests-patients.html','center-overview.html','qc-dashboard.html','tat-operations.html'])assert.equal((fs.readFileSync(file,'utf8').match(/src="dashboard-value-formulas.js"/g)||[]).length,1,file);
 console.log('PASS: verified calculations, source rounding, missing inputs, zero baselines, both margin rules, seven page assets, hover/focus/tap/keyboard, filter rerenders and stale-value cleanup.');

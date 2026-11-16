@@ -5,6 +5,14 @@
 .financial-table-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 12px}
 .financial-table-actions .co-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .financial-table-actions svg{width:15px;height:15px}
+.co-financial-report .financial-entity-name{display:block}
+.co-financial-report .financial-entity-id{display:block;margin-top:4px;color:var(--dashboard-muted);font-size:var(--dashboard-pagination-size);font-weight:var(--dashboard-weight-regular);line-height:1.5;overflow-wrap:anywhere}
+.co-financial-report .financial-pro-identity{display:inline-block}
+.financial-table-actions .financial-table-search{box-sizing:border-box;width:210px;min-height:34px;padding:7px 11px;border:1px solid #d5e3da;border-radius:10px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+.financial-table-actions:has(.financial-table-search){flex-wrap:wrap}
+@media(max-width:600px){.financial-table-actions .financial-table-search{width:100%;flex:1 1 180px}}
+.co-financial-report .co-financial-table tfoot tr:hover{background:transparent!important;box-shadow:none;transform:none}
+.co-financial-report .co-financial-table tfoot td{cursor:default}
 .financial-section-summary{margin:0 0 18px;min-width:0}
 .financial-section-summary-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 .financial-section-summary-heading h4{margin:0;color:var(--dashboard-ink);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium)}

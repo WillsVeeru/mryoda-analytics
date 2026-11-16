@@ -143,6 +143,7 @@
     if(active)hide();
     const next=new Set();
     function mark(cell,value){
+      if(cell.closest('tfoot')&&cell.closest('table.co-financial-table')&&!cell.closest('.pnl-statement'))return;
       if(cell.colSpan!==1||cell.querySelector('button,a,input,select'))return;
       metadata.set(cell,value);next.add(cell);cell.classList.add('dashboard-formula-value');
       if(!cell.hasAttribute('tabindex')){cell.tabIndex=0;cell.dataset.formulaAddedTabindex='true';}

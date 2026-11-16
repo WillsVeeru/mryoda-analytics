@@ -40,7 +40,9 @@ function financialTestRows(records) {
 
 
 const financialModules = ['Overall Revenue', 'Cost Analysis', 'Profit & Loss', 'Live CPT', 'Inventory', 'Cash Flow Statement'];
-const sampleCptRates = new Map(Object.values(financialSampleTests).flat().map((test, index) => [test.toLowerCase(), 65 + index * 20]));
+// Illustrative unit costs: routine tests are cheaper, while culture tests retain higher costs.
+// Uploaded CPT rates replace these defaults without any profit-based adjustment.
+const sampleCptRates = new Map(Object.values(financialSampleTests).flat().map((test, index) => [test.toLowerCase(), [12,16,18,22,24,28,60,75][index]]));
 let cptRates = sampleCptRates;
 let cptUpload = '';
 let financialModule = 'Overall Revenue';
@@ -276,6 +278,7 @@ function changeFinancialHeaderFilter(id, value) {
 }
 
 function resetFinancialOverviewFilters() {
+  const search=co('financialReportSearch');if(search?.type==='search')search.value='';
   financialMultiFilters.clear();
   financialHeaderClientType = 'all';
   financialHeaderClient = 'all';
@@ -425,6 +428,18 @@ function financialTableArrow() {
   return '<svg class="financial-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>';
 }
 
+function financialEntityIdMarkup(kind, id) {
+  if(!id||['NO-PRO','walk-in'].includes(String(id))||/^UNASSIGNED/i.test(id))return '';
+  const sample=/^[A-Z]+-(?:PRO|CL)\d+$/i.test(id);
+  return '<small class="financial-entity-id" data-financial-id="'+kind+'" data-entity-id="'+centerEscape(String(id))+'">'+(sample?'Sample ':'')+(kind==='pro'?'PRO':'Client')+' ID: '+centerEscape(String(id))+'</small>';
+}
+
+function financialReportMatches(row,level,query) {
+  if(!query)return true;
+  const fields=level==='pro'?[row.pro,row.proId]:level==='client'?[row.name,row.clientKey,row.id,row.pro,row.proId]:level==='branch'?[row.branchName,row.center,row.city,row.branchId]:level==='department'?[row.department]:[row.test];
+  return fields.some(value=>String(value??'').toLowerCase().includes(query.toLowerCase()));
+}
+
 function financialDrillButton(name, index, nextLevel) {
   const action = {client:'View clients', department:'View departments', test:'View tests'}[nextLevel] || 'View details';
   return '<button type="button" class="financial-drill-button" onclick="openFinancialGroup(' + index + ')" aria-controls="financialReportRows">' +
@@ -451,9 +466,13 @@ function renderFinancialReport() {
   const clientFilter = financialView === 'client' || (financialView === 'branch' && financialBranchPath === 'client' && financialTrail.length > 0);
   co('financialClientFilter').hidden = !clientFilter;
   const type = clientFilter ? co('financialClientType').value : 'all';
+  const search=co('financialReportSearch'),searchScope=JSON.stringify([financialView,financialTrail.map(step=>[step.level,step.key])]);
+  if(search?.type==='search'&&search.getAttribute('data-search-scope')!==searchScope){search.value='';search.setAttribute('data-search-scope',searchScope);}
+  const query=search?.type==='search'?search.value.trim():'';
   const records = financialLedger().filter(row =>
     financialHeaderTypeMatches(row,type) &&
-    financialTrail.every(step => (step.level === 'branch' ? (row.branchId || row.centerId) : row[financialGroupFields[step.level]]) === step.key)
+    financialTrail.every(step => (step.level === 'branch' ? (row.branchId || row.centerId) : row[financialGroupFields[step.level]]) === step.key)&&
+    financialReportMatches(row,level,query)
   );
   co('financialReportPanel').setAttribute('aria-labelledby', 'financial-tab-' + financialView);
   for (const [key] of financialViews) {
@@ -509,7 +528,8 @@ function renderFinancialReport() {
         [...assigned][0] && [...assigned][0] !== 'NO-PRO' ?
         '<button type="button" class="financial-pro-link" onclick="openFinancialClientPRO(' + groupIndex + ')" title="View this PRO in the PRO-wise report">' +
         proName + financialTableArrow() + '</button>' : proName;
-      row.push(types.size === 1 ? centerEscape([...types][0]) : '—', proLink);
+      const proId=assigned.size===1?[...assigned][0]:null;
+      row.push(types.size === 1 ? centerEscape([...types][0]) : '—', '<span class="financial-pro-identity">'+proLink+financialEntityIdMarkup('pro',proId)+'</span>');
     }
     if (showCount) row.push(centerNumber(group.tests));
     if (proSummary) row.push(financialAmount(target));
@@ -537,6 +557,8 @@ function renderFinancialReport() {
       const city = record.city || branch?.city || branch?.name || '';
       name = '<span class="financial-branch-name" title="' + centerEscape(group.name) + '">' + name + '</span>' +
         (city ? ' <span class="financial-branch-city">' + centerEscape(city) + '</span>' : '');
+    }else if(level==='pro'||level==='client'){
+      name='<span class="financial-entity-name">'+name+'</span>'+financialEntityIdMarkup(level,group.key);
     }
     const label = drillable ? financialDrillButton(name, index, path[financialTrail.length + 1]) : name;
     const row = values(group, label, targetFor(group), index);
@@ -1678,10 +1700,13 @@ function financialTablePageWindow(count, page, size) {
 }
 
 function financialTableCellText(cell) {
+  const entity=cell.querySelector('.financial-entity-name');
+  if(entity)return entity.textContent.trim();
   const name = cell.querySelector('.financial-drill-name');
   if (name) return name.textContent.trim();
   const copy = cell.cloneNode(true);
   copy.querySelectorAll('svg').forEach(node => node.remove());
+  copy.querySelectorAll('.financial-entity-id').forEach(node=>node.remove());
   copy.querySelectorAll('br').forEach(node => node.replaceWith(document.createTextNode(' ')));
   return copy.textContent.replace(/\s+/g, ' ').trim();
 }
@@ -1751,8 +1776,9 @@ function exportFinancialDataTable(controller) {
   const table = controller.table;
   const header = Array.from(table.tHead?.rows[0]?.cells || []).map(financialTableCellText);
   const columns = header.map((label,index) => /^(Action|Review)$/i.test(label) ? -1 : index).filter(index => index >= 0);
-  const values = row => columns.map(index => row.cells[index] ? financialTableCellText(row.cells[index]) : '');
-  const rows = [columns.map(index => header[index]), ...controller.groups.map(group => values(group.row)),
+  const exportColumns=columns.flatMap(index=>[{index},...['client','pro'].filter(kind=>controller.groups.some(group=>group.row.cells[index]?.querySelector?.('[data-financial-id="'+kind+'"]'))).map(kind=>({index,kind}))]);
+  const values = row => exportColumns.map(({index,kind}) => kind?row.cells[index]?.querySelector?.('[data-financial-id="'+kind+'"]')?.getAttribute('data-entity-id')||'':row.cells[index]?financialTableCellText(row.cells[index]):'');
+  const rows = [exportColumns.map(({index,kind}) => kind?(kind==='pro'?'PRO ID':'Client ID'):header[index]), ...controller.groups.map(group => values(group.row)),
     ...Array.from(table.tFoot?.rows || []).map(values)];
   if (controller.module === 'Profit & Loss') {
     const capital = co('financialOtherModule').querySelector('.pnl-capital');
@@ -1811,6 +1837,12 @@ function mountFinancialTableActions(controller,wrap,root,label,key,hasPivotExpor
     const tools = document.createElement('div');
     tools.className = 'financial-table-actions';
     controller.actions = tools;
+    if(controller.module==='Overall Revenue'){
+      const search=document.createElement('input');search.type='search';search.id='financialReportSearch';search.className='financial-table-search';
+      search.placeholder='Search names or IDs';search.setAttribute('aria-label','Search report by name or ID');
+      search.setAttribute('data-search-scope',JSON.stringify([financialView,financialTrail.map(step=>[step.level,step.key])]));
+      search.addEventListener('input',()=>renderFinancialReport());tools.appendChild(search);
+    }
     tools.appendChild(chartButton);
     const exportButton = document.createElement('button');
     exportButton.type = 'button';
@@ -1880,6 +1912,18 @@ function financialTableSummaryData(controller) {
   return {headers,rows,totals,metrics:metrics.slice(0,4),isStatement,isRates,createFooter:!footer&&!isStatement&&!isRates&&headers.some((_,index)=>additive(index)),count:rows.length};
 }
 
+function financialSectionSummaryTitle(controller) {
+  if(controller.module==='Overall Revenue'){
+    const selected=financialTrail.at(-1);
+    const singular={branch:'Branch',pro:'PRO',client:'Client',department:'Department',test:'Test'};
+    const plural={branch:'Branches',pro:'PROs',client:'Clients',department:'Departments',test:'Tests'};
+    if(selected)return selected.name+' · '+(singular[selected.level]||'Section')+' Summary';
+    return 'All '+(plural[financialView]||'Branches')+' Summary';
+  }
+  if(controller.module==='Inventory'&&controller.chartLabel==='Monthly Branch Stock Comparison')return 'Monthly Branch Stock Summary';
+  return (controller.module||controller.chartLabel||'Section')+' Summary';
+}
+
 function refreshFinancialTableSummary(controller) {
   const model=financialTableSummaryData(controller),table=controller.table;
   if(model.createFooter){
@@ -1889,12 +1933,14 @@ function refreshFinancialTableSummary(controller) {
   const footer=table.tFoot?.rows[0];
   if(footer&&!model.isStatement){
     if(footer.cells[0].textContent!=='All filtered total')footer.cells[0].textContent='All filtered total';
-    footer.cells[0].title='All rows matching the current filters, across every page';
+    footer.cells[0].removeAttribute?.('title');
   }
   if(controller.totalNote)controller.totalNote.textContent=model.isRates?'CPT rates are not additive':model.isStatement?'Statement result covers all filtered activity':'Total covers all filtered rows across every page';
   controller.summaryHost.hidden=!!controller.isExpenseDetail;
   if(controller.isExpenseDetail)return;
-  const html='<div class="financial-section-summary-heading"><h4>All filtered results</h4><span>'+centerNumber(model.count)+' records</span></div><div class="financial-section-summary-grid">'+model.metrics.map(metric=>{
+  const title=financialSectionSummaryTitle(controller);
+  controller.summaryHost.setAttribute('aria-label',title);
+  const html='<div class="financial-section-summary-heading"><h4>'+centerEscape(title)+'</h4><span>'+centerNumber(model.count)+' records</span></div><div class="financial-section-summary-grid">'+model.metrics.map(metric=>{
     const value=financialSortValue(metric.display),newSpend=metric.display==='New spend',note=newSpend?'No previous-period baseline':typeof value==='number'?/^unique clients$/i.test(metric.label)?'Distinct across filtered rows':/^difference$/i.test(metric.label)?'PROs with targets only':'All filtered rows':metric.display==='—'?'Not available for this scope':'Requires complete source inputs';
     const display=typeof value==='number'||newSpend?metric.display:'—';
     return '<section class="revenue-kpi financial-section-summary-card"><span class="financial-section-summary-icon restored-kpi-icon" aria-hidden="true">'+dashboardIcon(/tests|rates/i.test(metric.label)?'FlaskConical':/clients/i.test(metric.label)?'Users':'Banknote')+'</span><h2>'+centerEscape(metric.label)+'</h2><strong>'+centerEscape(display)+'</strong><p>'+note+'</p></section>';
@@ -1907,7 +1953,7 @@ function enhanceFinancialTables(root, contextTitle) {
   if (!root) return;
   const filterScope = JSON.stringify([
     co('coFrom').value, co('coTo').value, co('coCenter').value, co('coCity').value, co('coZone').value,
-    financialHeaderClientType, financialHeaderClient, financialView, financialTrail,
+    financialHeaderClientType, financialHeaderClient, financialView, financialTrail,co('financialReportSearch')?.type==='search'?co('financialReportSearch').value:'',
     financialCostPeriod, financialCustomComparison, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
     Array.from(financialMultiFilters, ([id,values]) => [id, values ? [...values].sort() : 'all'])
   ]);
