@@ -492,10 +492,9 @@ function renderFinancialReport() {
   co('financialDrillControls').hidden = !controls;
 
   const proSummary = level === 'pro';
-  const proDetail = financialView === 'pro' && !proSummary;
-  const departmentMetrics = level === 'department' && !proDetail;
-  const showCost = level === 'branch' || proSummary || level === 'test' || departmentMetrics || (level === 'client' && !proDetail);
-  const showReferral = !proDetail && (level === 'branch' || proSummary || level === 'client' || departmentMetrics || level === 'test');
+  const departmentMetrics = level === 'department';
+  const showCost = level === 'branch' || proSummary || level === 'test' || departmentMetrics || level === 'client';
+  const showReferral = level === 'branch' || proSummary || level === 'client' || departmentMetrics || level === 'test';
   const showCount = level === 'branch' || level === 'client' || proSummary || level === 'test' || departmentMetrics;
   const showMargin = level === 'branch' || showReferral;
   const marginLabel = showReferral ? 'Net Margin' : 'Margin';

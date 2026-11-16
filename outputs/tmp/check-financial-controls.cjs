@@ -97,5 +97,17 @@ const pivotTools=new Node('div'),pivotExport=new Node('button');pivotTools.appen
 context.mountFinancialTableActions(pivot,pivotWrap,{querySelector:()=>pivotExport},'Pivot','Cost Analysis:pivot:0',true);assert.equal(pivotTools.children[0],pivot.chartButton);assert.equal(pivotTools.children[1],pivotExport);assert.equal(pivot.exportButton,undefined);
 const model=context.financialChartData({table:{tHead:{rows:[{cells:[new Node('th','Client'),new Node('th','Cost'),new Node('th','Action')]}]}},groups:[{row:{cells:[new Node('td','A'),new Node('td','—'),new Node('td','View')]}}]});assert.deepEqual(json(model.columns),['Client','Cost']);assert.equal(model.types[1],'money');assert.equal(model.rows[0][1],null);
 for(const asset of ['dashboard-report-charts.css','dashboard-report-charts.js','dashboard-report-chart-tooltips.js','compact-chart-marks.js'])assert(page.includes(asset));
+// PRO → client → department → test keeps the same financial metric columns.
+context.financialView='pro';records[0].proId=pro;records[0].department='BIOCHEMISTRY';records[0].test='Glucose';records[0].cost=100;
+context.financialGroupFields={pro:'proId',client:'clientKey',department:'department',test:'test'};
+const proTrail=[{level:'pro',key:pro,name:'Akshay Reddy'},{level:'client',key:'CL1',name:'Wellness Clinic'},{level:'department',key:'BIOCHEMISTRY',name:'BIOCHEMISTRY'}];
+for(const depth of [1,2,3]){
+ context.financialTrail=proTrail.slice(0,depth);context.renderFinancialReport();
+ const headings=co('financialReportHead').innerHTML;let previous=-1;
+ for(const label of ['Tests','Gross','Discount','Net Revenue','Cost','Referral','Net Margin']){const index=headings.indexOf('<th>'+label+'</th>');assert(index>previous,'Missing/out-of-order PRO drilldown column: '+label);previous=index;}
+ assert(!headings.includes('<th>Target</th>'));assert(co('financialReportRows').innerHTML.includes('<td>100</td><td>50</td><td>850</td>'));assert(co('financialReportTotals').innerHTML.includes('<td>100</td><td>50</td><td>850</td>'));
+ records[0].cost=null;context.renderFinancialReport();assert(co('financialReportRows').innerHTML.includes('<td>—</td><td>50</td><td>—</td>'));records[0].cost=100;
+}
+console.log('PASS: all seven financial metric columns throughout PRO/client/department/test drilldown, reconciled margin and footer values, and missing CPT handling.');
 console.log('PASS: custom/current/previous calendar ranges, invalid and leap dates, all Cost views, sorting all rows before pagination, both directions, null/negative/money/text values, attached breakdowns, fixed totals, sorted CSV, and Branch Referral/Net Margin including missing CPT.');
 console.log('PASS: Chart before Export, reusable chart controls, complete filtered rows without footer totals, close/focus handling, Pivot export preserved and missing costs left unavailable.');

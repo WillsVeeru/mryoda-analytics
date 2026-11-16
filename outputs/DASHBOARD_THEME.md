@@ -25,4 +25,6 @@ Use the shared variables instead of hard-coded sizes or alternate fonts. Default
 
 Keep Financial Overview's semantic colours for revenue, deductions, costs, results and comparison values. Keep Cost Analysis summary backgrounds and existing banner layouts. Inter loads via Google Fonts with `display=swap`, with Arial/system sans-serif as fallback while the font is loading or unavailable.
 
+Table alignment is shared across all pages: names and descriptive text left, counts and other numeric measures (including percentages and durations) center, and currency amounts right. Apply the same alignment to column headings and totals. `dashboard-financial-foundation.js` maintains alignment after filtering, sorting, pagination and drilldowns, including Financial Overview. Use `data-column-align="left|center|right"` on a header when an ambiguous column needs an explicit type; preserve the actual data, calculations and semantic colours.
+
 When adding a new page, link it from the existing sidebar navigation. Run the relevant page checks. `node tmp/check-tat-operations.cjs` checks the TAT reports and sidebar links.

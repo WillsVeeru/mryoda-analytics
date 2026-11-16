@@ -38,8 +38,59 @@
       value?.classList.add('dashboard-financial-kpi-value');note?.classList.add('dashboard-financial-kpi-note');icon?.classList.add('dashboard-financial-kpi-icon');
     });
   }
+  function tableColumnAlignment(label,values,explicit){
+    if(['left','center','right'].includes(explicit))return explicit;
+    const heading=label.toLowerCase().replace(/[↕↑↓▴▾]/g,'').replace(/\s+/g,' ').trim();
+    const samples=values.map(value=>value.trim()).filter(value=>value&&!/^[—–-]+$/.test(value));
+    const numeric=value=>/^[+−-]?[\d,.]+(?:\s*%|\s*[kml])?$/i.test(value);
+    // Percentages and durations remain numeric even when their labels mention cost or revenue.
+    if(/%|\b(?:percent|percentage|share|contribution|achievement|attainment|tat|sla|hours?|hrs?|minutes?|mins?|lab processing)\b|\bwithin\s+\d/i.test(heading))return 'center';
+    if(/^(?:#|s\.?\s*no\.?|serial(?: number)?|rank|(?:pro|client|doctor|patient|employee|test) id)$/.test(heading))return 'center';
+    if(/^(?:name|person|pro|doctor|client|branch|cent[er]+|city|state|test|panel|package|department|category|speciali[sz]ation|designation|type|role|status|movement|action|review|reason|stage|bucket|group|mode|channel|source|campaign|lead platform|booked via|referred by|sales rep|sales manager|account manager|reports to|manager designation|coco\/foco)$/.test(heading)||/\b(?:name|category|login|payment mode|booking channel|referral source|client type)\b/.test(heading))return 'left';
+    if(samples.some(value=>/[₹$€£]|\bINR\b/.test(value)))return 'right';
+    if(samples.length&&samples.every(value=>/^[+−-]?[\d,.]+\s*(?:%|h|hrs?|hours?|m|mins?|minutes?|s|sec(?:onds?)?)(?:\b|$)/i.test(value)))return 'center';
+    if(/\b(?:date|month|period|onboarded|first bill)\b/.test(heading)&&!/\b(?:target|revenue|amount|cost|spend)\b/.test(heading))return 'left';
+    if(/shortfall|excess/.test(heading)&&samples.some(value=>!numeric(value)))return 'center';
+    if(/\b(?:revenue|gross|net|amount|discount|expense|expenses|expenditure|cost|spend|salary|salaries|balance|cash|paid|margin|target|shortfall|excess|difference|cpt|price|ticket|realised|realized)\b/.test(heading))return 'right';
+    if(samples.length&&samples.every(value=>numeric(value)||/^[+−-]?[\d,.]+\s*(?:h|hrs?|hours?|m|mins?|minutes?|s|sec(?:onds?)?)\b/i.test(value)))return 'center';
+    if(/\b(?:bills?|patients?|tests|volume|count|samples?|runs?|panels|clients|doctors|centres|centers|receipts|orders|registered|received|batched|transferred|billed|cancelled|pending|rejections?|passed|failed|active|moved up|moved down|no business|units)\b/.test(heading))return 'center';
+    return 'left';
+  }
+  function alignTable(table){
+    if(table.closest('.dashboard-formula-dialog,#financialFormulaSections'))return;
+    // Map spanning headers to their actual columns; never borrow rows from a nested table.
+    const grid=[],records=[],labels=[],explicit=[];
+    [...table.rows].filter(row=>row.closest('table')===table).forEach((row,rowIndex)=>{
+      grid[rowIndex]??=[];
+      let column=0;
+      for(const cell of row.cells){
+        while(grid[rowIndex][column])column++;
+        const width=cell.colSpan||1,height=cell.rowSpan===0?table.rows.length-rowIndex:cell.rowSpan||1;
+        records.push({cell,row,column,width,header:row.parentElement===table.tHead||cell.tagName==='TH'});
+        for(let y=rowIndex;y<rowIndex+height;y++){
+          grid[y]??=[];for(let x=column;x<column+width;x++)grid[y][x]=cell;
+        }
+        if(row.parentElement===table.tHead||!table.tHead&&cell.tagName==='TH')for(let x=column;x<column+width;x++){
+          labels[x]=cell.textContent.trim();explicit[x]=cell.dataset.salesAlign||cell.dataset.columnAlign;
+        }
+        column+=width;
+      }
+    });
+    const samples=labels.map(()=>[]);
+    for(const {cell,row,column,width,header}of records)if(!header&&width===1&&row.parentElement!==table.tFoot&&(samples[column]?.length||0)<32){
+      (samples[column]??=[]).push(cell.textContent);
+    }
+    const alignments=labels.map((label,index)=>tableColumnAlignment(label,samples[index]||[],explicit[index]));
+    for(const {cell,row,column,width,header}of records){
+      let align=width===1?alignments[column]||'left':'left';
+      if(header&&width>1){const children=alignments.slice(column,column+width);if(children.length&&children.every(value=>value===children[0]))align=children[0];}
+      if(row.parentElement===table.tFoot&&/\btotal\b|\bsummary\b/i.test(cell.textContent)&&!/[₹$€£]/.test(cell.textContent))align='left';
+      cell.dataset.dashboardAlign=align;
+    }
+  }
   function enhanceTables(){
     document.querySelectorAll('main table,dialog table').forEach(table=>{
+      alignTable(table);
       // Financial Overview already supplies the reference theme and its semantic colours.
       if(table.matches('.co-financial-table')||table.closest('.dashboard-formula-dialog,#financialFormulaSections'))return;
       table.classList.add('dashboard-financial-table');

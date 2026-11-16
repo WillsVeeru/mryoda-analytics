@@ -98,6 +98,7 @@
   const metadata=new WeakMap();let decorated=new Set(),active=null,scheduled=false,pinned=false;
   function contextFor(table){
     const context={};
+    if(table.dataset?.salesContext&&window.salesTeamPage)context.fullRows=window.salesTeamPage.formulaRowsFor?.(table.dataset.salesContext)||window.salesTeamPage.rowsFor(table.dataset.salesContext);
     if(table.dataset?.b2cReport&&window.yodaB2CPage)Object.assign(context,window.yodaB2CPage.formulaContext(table));
     const referenceId=table.closest('[id^="reference-section-"]')?.id?.replace('reference-section-','');
     const baseId=table.closest('[id^="table-"]')?.id?.replace('table-','');

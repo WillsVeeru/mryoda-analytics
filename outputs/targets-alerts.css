@@ -10,7 +10,38 @@
 .financial-target-status{display:inline-flex;padding:4px 9px;border-radius:999px;background:#f1f4f3;color:#718579;font-size:var(--dashboard-caption-size);white-space:nowrap}
 .financial-target-status.positive{background:#e8f5ec;color:#216b39}
 .financial-target-status.warning{background:#fff3df;color:#8a5a00}
+.targets-alerts-page .targets-difference.negative{color:#9a4248}
+.targets-alerts-page .targets-difference.positive{color:#216b39}
+.targets-alerts-page .targets-difference.neutral{color:var(--dashboard-muted)}
 .financial-target-link{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
 .financial-target-link svg{width:15px;height:15px}
 .targets-editor-note{margin:0 0 14px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.6}
 @media(max-width:600px){.targets-editor-head{align-items:stretch;flex-direction:column}}
+.targets-period-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:18px 20px;margin:0 0 22px}
+.targets-period-bar>span:first-child{font-size:var(--dashboard-control-size);font-weight:var(--dashboard-weight-medium)}
+.targets-period-bar select,.targets-editor-grid select,.targets-editor-grid input,.targets-alerts-page .doctors-actions select{box-sizing:border-box;min-height:38px;padding:8px 12px;border:1px solid #d5e3da;border-radius:12px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size);max-width:100%}
+.targets-period-hint{margin-left:auto;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
+.targets-alerts-page .targets-alert-card{position:relative;padding-left:76px;min-height:116px}
+.targets-alert-icon{position:absolute;left:20px;top:22px;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#eef3f8;color:#526a84}
+.targets-alert-icon svg{width:19px;height:19px}
+.targets-alert-card[data-alert-tone="negative"] .targets-alert-icon{background:#fff0f2;color:#ad4557}
+.targets-alert-card[data-alert-tone="positive"] .targets-alert-icon{background:#eaf8f0;color:#258458}
+.targets-editor h2{display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.targets-editor-grid{display:grid;grid-template-columns:1fr 1.6fr 1fr 1fr 1fr;align-items:end;gap:12px}
+.targets-editor-grid label{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:var(--dashboard-caption-size);color:var(--dashboard-muted)}
+.targets-editor-grid :is(select,input){width:100%;min-width:0}
+.targets-save{min-height:38px;border:1px solid #278436;border-radius:12px;padding:8px 16px;background:linear-gradient(180deg,#35b34a,#278436);color:#fff;font-size:var(--dashboard-control-size);font-weight:var(--dashboard-weight-medium);cursor:pointer}
+.targets-save:hover{filter:brightness(.97)}
+.targets-editor .targets-editor-note{margin:12px 0 0}
+.targets-editor-note:empty,.targets-alerts-page .doctors-message:empty{display:none}
+.targets-storage-note{font-size:var(--dashboard-kpi-note-size)}
+.targets-actual-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:0 0 16px}
+.targets-actual-actions .doctors-message{margin:0;flex:1;line-height:1.7}
+.targets-actual-actions a{margin-left:auto}
+.targets-alerts-page .doctors-actions select{min-height:34px;padding:6px 10px;max-width:180px}
+.targets-alerts-page .doctors-actions input{width:190px}
+.targets-alerts-page [hidden]{display:none!important}
+.targets-sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.targets-alerts-page :is(button,select,input,a):focus-visible{outline:2px solid #348849;outline-offset:3px}
+@media(max-width:1200px){.targets-editor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.targets-editor-grid .targets-save{align-self:end}}
+@media(max-width:650px){.targets-editor-grid{grid-template-columns:minmax(0,1fr)}.targets-period-hint{width:100%;margin-left:0}.targets-alerts-page .doctors-kpis{grid-template-columns:minmax(0,1fr)}.targets-alerts-page .doctors-actions{width:100%}.targets-alerts-page .doctors-actions :is(input,select){flex:1;min-width:120px}.targets-actual-actions a{margin-left:0}}

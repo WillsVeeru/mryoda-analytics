@@ -49,6 +49,14 @@ html body :is(.dashboard-financial-table,.co-financial-table,.tat-table) tbody t
 html body :is(.dashboard-financial-table,.co-financial-table,.tat-table) tbody td:first-child {
   font-weight:var(--dashboard-weight-semibold);
 }
+/* Shared table alignment, including legacy first-column and inline alignment rules. */
+html body table [data-dashboard-align="left"] { text-align:left!important; }
+html body table [data-dashboard-align="center"] { text-align:center!important; }
+html body table [data-dashboard-align="right"] { text-align:right!important; }
+html body table th[data-dashboard-align] > button { text-align:inherit!important; }
+html body table th[data-dashboard-align="left"] > button { justify-content:flex-start!important; }
+html body table th[data-dashboard-align="center"] > button { justify-content:center!important; }
+html body table th[data-dashboard-align="right"] > button { justify-content:flex-end!important; }
 /* Preserve the Financial Overview semantic amount emphasis and colours. */
 html body .co-financial-table tbody td[class*="financial-tone-"],
 html body .tat-table tbody td[data-tat-tone]:not([data-tat-tone=""]) {
