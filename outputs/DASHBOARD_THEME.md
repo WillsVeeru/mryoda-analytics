@@ -17,6 +17,7 @@ After page markup and page scripts:
 
 ```html
 <script src="application-sidebar.js"></script>
+<script src="application-header-scroll.js"></script>
 <script src="dashboard-financial-foundation.js"></script>
 <script src="dashboard-value-formulas.js"></script>
 ```
@@ -27,4 +28,10 @@ Keep Financial Overview's semantic colours for revenue, deductions, costs, resul
 
 Table alignment is shared across all pages: names and descriptive text left, counts and other numeric measures (including percentages and durations) center, and currency amounts right. Apply the same alignment to column headings and totals. `dashboard-financial-foundation.js` maintains alignment after filtering, sorting, pagination and drilldowns, including Financial Overview. Use `data-column-align="left|center|right"` on a header when an ambiguous column needs an explicit type; preserve the actual data, calculations and semantic colours.
 
+Drilldown reports share Location Explorer's structure: `dashboard-report-breadcrumb`, followed by `dashboard-summary-info` (context title and selected dates), `dashboard-context-summary` metric cards, then a separate table. Use `dashboard-summary-icon` with the existing icons; four-card summaries can set `data-summary-columns="4"`, and cards can preserve semantic colours with `data-summary-tone`. Breadcrumb ancestors are buttons and the current item uses `aria-current="page"`. Keep initial root views free of redundant breadcrumbs.
+
 When adding a new page, link it from the existing sidebar navigation. Run the relevant page checks. `node tmp/check-tat-operations.cjs` checks the TAT reports and sidebar links.
+
+Use `application-header-scroll.js` for the primary `main > header`: it hides after downward page scrolling and returns on upward scrolling, keyboard focus, or returning to the top. Focused or expanded filters keep the header visible. The shared theme provides sticky positioning, motion preferences and print handling. Pages without a global header do not gain an extra header.
+
+Quality Control and the separate Center Overview navigation entry are temporarily hidden using `hidden data-sidebar-hidden="true"`. Keep their buttons, destinations and pages intact. Financial Overview remains visible even though it uses the same underlying page as Center Overview.

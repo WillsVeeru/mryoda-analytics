@@ -16,6 +16,10 @@ assert.equal(result(['Target','Net Revenue','Target Shortfall','Target Excess','
 assert.equal(result(['Target','Net Revenue','Target Shortfall','Target Excess'],['—','₹700','—','—']).size,0);
 r=result(['Target','Net Revenue','Shortfall / Excess','Difference'],['₹700','₹1,000','Excess','+₹300']);assert(r.has(2));assert(r.has(3));assert.equal(r.get(3).formula,'Net Revenue − Target');
 r=result(['Target','Net Revenue','Shortfall / Excess','Difference'],['₹1,000','₹700','Shortfall','₹-300']);assert(r.has(2));assert(r.has(3));
+const comparisonLabels=['Person','Scope','Previous target','Previous net revenue','Previous difference','Previous status','Current target','Current net revenue','Current difference','Current status','Action'];
+r=result(comparisonLabels,['Rao','PRO','₹1,000','₹1,200','+₹200','Excess','₹2,000','₹1,500','₹-500','Shortfall','Edit']);
+assert.equal(r.size,4);assert(r.get(4).calculation.includes('₹1,200 − ₹1,000 = +₹200'));assert(r.get(8).calculation.includes('₹1,500 − ₹2,000 = ₹-500'));assert.equal(r.get(5).title,'Previous month status');assert.equal(r.get(9).title,'Current month status');
+assert.equal(result(comparisonLabels,['Rao','PRO','₹1,000','—','—','Actuals unavailable','₹2,000','₹0','—','Not started','Edit']).size,0);
 assert.equal(result(['Target','Net Revenue','Shortfall / Excess','Difference'],['₹1,000','₹700','Shortfall','₹-300'],{targetFooter:true}).size,0);
 r=result(['Cash Received','Cash Brought In','Cash Paid','Net Cash Movement'],['₹1,000','₹250','₹1,100','₹150']);assert(r.get(3));
 r=result(['Revenue','Tests','Avg / Test'],['₹1,000','4','₹250']);assert(r.get(2));

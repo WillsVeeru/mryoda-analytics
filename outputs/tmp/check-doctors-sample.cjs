@@ -47,3 +47,6 @@ ids.get('doctorSearch').value='';api.refresh();assert(ids.get('doctors-heading-t
 if(!api.states.tests.chart)click({doctorsChart:'top'});const fills=[...ids.get('doctors-chart-top').innerHTML.matchAll(/<rect[^>]*fill="([^"]+)"/g)].map(m=>m[1]);assert(new Set(fills).size>1);assert(fills.every(c=>['#35B34A','#2da6d9','#8b4ac4','#efa124','#36aca0','#d57698'].includes(c)));console.log('PASS: Doctors chart bars use the existing multi-colour dashboard palette.');
 
 click({doctorsOpen:'doctor',name:'WELLNESS BEGUMPET'});click({doctorsOpen:'category',name:'RADIOLOGY'});const breakdownMarkup=ids.get('doctors-table-top').innerHTML;assert(breakdownMarkup.indexOf('doctors-breadcrumb')<breakdownMarkup.indexOf('doctors-breakdown-info'));assert(breakdownMarkup.indexOf('doctors-breakdown-info')<breakdownMarkup.indexOf('doctors-context-summary'));assert.equal(ids.get('doctors-heading-top').textContent,'Top referring doctors');
+
+for(const name of ['dashboard-report-breadcrumb','dashboard-summary-info','dashboard-context-summary'])assert(breakdownMarkup.includes(name));
+assert.equal((breakdownMarkup.match(/class="dashboard-summary-icon"/g)||[]).length,3);

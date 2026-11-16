@@ -6,10 +6,13 @@
   const catalog=Object.freeze(branches.flatMap(([centerId,branch,...names])=>names.map((name,i)=>Object.freeze({id:centerId.toUpperCase()+'-PRO0'+(i+1),centerId,branch,name}))));
   const repNames={hyderabad:['Vamshi Reddy','Nisha Rao'],bengaluru:['Rohan Hegde','Deepa Nair'],chennai:['Harini Ravi','Surya Kumar'],mumbai:['Aditi Shah','Kunal Desai'],delhi:['Tanya Kapoor','Aman Sethi']};
   const scopeLabels=Object.freeze({pro:'PRO',accountManager:'Account Manager',salesRep:'Sales Rep'});
+  const metricLabels=Object.freeze({revenue:'Revenue (₹)',tests:'Test count'});
+  const validMetric=metric=>Object.hasOwn(metricLabels,metric);
+  const validCount=value=>Number.isSafeInteger(value)&&value>=0;
   const people=Object.freeze([
     ...(window.targetReferencePeople||[]),
-    ...catalog.map(person=>Object.freeze({...person,scope:'pro'})),
-    ...['accountManager','salesRep'].flatMap(scope=>branches.flatMap(([centerId,branch])=>repNames[centerId].map((name,index)=>Object.freeze({id:centerId.toUpperCase()+'-SR0'+(index+1),centerId,branch,name,scope}))))
+    ...catalog.map(person=>Object.freeze({...person,scope:'pro',source:'demo'})),
+    ...['accountManager','salesRep'].flatMap(scope=>branches.flatMap(([centerId,branch])=>repNames[centerId].map((name,index)=>Object.freeze({id:centerId.toUpperCase()+'-SR0'+(index+1),centerId,branch,name,scope,source:'demo'}))))
   ]);
   let memory={targets:{}};let lastSnapshot=null,memoryOnly=false;
   const read=()=>{if(!memoryOnly)try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved&&saved.targets&&typeof saved.targets==='object')memory=saved;}catch{}return memory;};
@@ -45,27 +48,39 @@
     const difference=actual-target;
     return{shortfall:Math.max(0,-difference),excess:Math.max(0,difference),status:difference>0?'Above target':difference<0?'Below target':'Target met',tone:difference<0?'warning':'positive'};
   }
-  function savedTarget(scope,personId,month){
-    if(!validMonth(month)||!people.some(person=>person.scope===scope&&person.id===personId))return null;
-    const legacy=scope==='pro'&&catalog.some(person=>person.id===personId);
-    const data=read(),id=legacy?personId+':'+month:scope+':'+personId+':revenue:'+month;
+  function savedTarget(scope,personId,month,metric='revenue'){
+    if(!validMetric(metric)||!validMonth(month)||!people.some(person=>person.scope===scope&&person.id===personId))return null;
+    const legacy=metric==='revenue'&&scope==='pro'&&catalog.some(person=>person.id===personId);
+    const data=read(),id=legacy?personId+':'+month:scope+':'+personId+':'+metric+':'+month;
     const value=(legacy?data.targets:data.scopedTargets||{})[id];
     return Number.isFinite(value)&&value>=0?value:null;
   }
-  function setScopedTarget(scope,personId,month,amount){
-    if(!validMonth(month)||!people.some(person=>person.scope===scope&&person.id===personId)||!Number.isSafeInteger(amount)||amount<0)throw Error('Choose a valid scope, person, month and whole-rupee target.');
-    if(scope==='pro'&&catalog.some(person=>person.id===personId))return setMonthlyTarget(personId,month,amount);
-    const data=read();data.scopedTargets=data.scopedTargets||{};data.scopedTargets[scope+':'+personId+':revenue:'+month]=amount;let saved=true;
+  function setScopedTarget(scope,personId,month,amount,metric='revenue'){
+    if(!validMetric(metric)||!validMonth(month)||!people.some(person=>person.scope===scope&&person.id===personId)||!validCount(amount))throw Error('Choose a valid metric, scope, person, month and whole-number target.');
+    if(metric==='revenue'&&scope==='pro'&&catalog.some(person=>person.id===personId))return setMonthlyTarget(personId,month,amount);
+    const data=read();data.scopedTargets=data.scopedTargets||{};data.scopedTargets[scope+':'+personId+':'+metric+':'+month]=amount;let saved=true;
     try{localStorage.setItem(key,JSON.stringify(data));}catch{saved=false;memoryOnly=true;}
     window.dispatchEvent(new Event('dashboardtargetschange'));return saved;
   }
-  function savedTargets(month){return people.flatMap(person=>{const target=savedTarget(person.scope,person.id,month);return target===null?[]:[{...person,target,metric:'revenue'}];});}
-  function actualFor(scope,personId,from,to){const snapshot=getSnapshot();if(!snapshot||snapshot.from!==from||snapshot.to!==to)return null;const values=scope==='pro'?snapshot.actuals:snapshot.scopeActuals?.[scope];return values&&Object.hasOwn(values,personId)&&Number.isFinite(values[personId])?values[personId]:null;}
+  function savedTargets(month,metric='revenue'){return people.flatMap(person=>{const target=savedTarget(person.scope,person.id,month,metric);return target===null?[]:[{...person,target,metric}];});}
+  function actualFor(scope,personId,from,to,metric='revenue'){
+    const snapshot=getSnapshot();if(!validMetric(metric)||!snapshot||snapshot.from!==from||snapshot.to!==to)return null;
+    const values=metric==='tests'?(scope==='pro'?snapshot.testActuals:snapshot.scopeTestActuals?.[scope]):(scope==='pro'?snapshot.actuals:snapshot.scopeActuals?.[scope]);
+    const value=values&&Object.hasOwn(values,personId)?values[personId]:null;
+    return metric==='tests'?validCount(value)?value:null:Number.isFinite(value)?value:null;
+  }
   function captureActuals({from,to,records,centerIds,scope}){
     if(!validDate(from)||!validDate(to)||from>to)return;
     const ids=new Set(centerIds),eligible=catalog.filter(p=>ids.has(p.centerId)).map(p=>p.id),actuals=Object.fromEntries(eligible.map(id=>[id,0]));
     for(const row of records)if(Object.hasOwn(actuals,row.proId)&&Number.isFinite(row.net))actuals[row.proId]+=row.net;
-    const scopeActuals={};
+    const countTests=(assigned,field)=>{
+      if(!records.some(row=>validCount(row.tests)))return {};
+      const counts=Object.fromEntries([...assigned].map(id=>[id,0])),missing=new Set();
+      for(const row of records)if(Object.hasOwn(counts,row[field])){if(validCount(row.tests))counts[row[field]]+=row.tests;else missing.add(row[field]);}
+      for(const id of missing)delete counts[id];
+      return counts;
+    };
+    const testActuals=countTests(eligible,'proId'),scopeActuals={},scopeTestActuals={};
     for(const [role,field]of [['accountManager','accountManagerId'],['salesRep','representativeId']]){
       const scoped=people.filter(person=>person.scope===role&&ids.has(person.centerId));
       const known=new Set(scoped.map(person=>person.id));
@@ -73,8 +88,9 @@
       const values=Object.fromEntries(scoped.map(person=>[person.id,0]));
       for(const row of records)if(Object.hasOwn(values,row[field])&&Number.isFinite(row.net))values[row[field]]+=row.net;
       scopeActuals[role]=values;
+      scopeTestActuals[role]=countTests(known,field);
     }
-    lastSnapshot={from,to,actuals,scopeActuals,scope,capturedAt:new Date().toISOString()};
+    lastSnapshot={from,to,actuals,scopeActuals,testActuals,scopeTestActuals,scope,capturedAt:new Date().toISOString()};
     try{localStorage.setItem(snapshotKey,JSON.stringify(lastSnapshot));}catch{memoryOnly=true;}
   }
   function getSnapshot(){if(!memoryOnly)try{const saved=JSON.parse(localStorage.getItem(snapshotKey)||'null');if(saved&&validDate(saved.from)&&validDate(saved.to)&&saved.actuals)lastSnapshot=saved;}catch{}return lastSnapshot;}
@@ -95,17 +111,19 @@
       memory.scopedTargets=memory.scopedTargets||{};
       for(const [id,value]of Object.entries(imported.scopedTargets||{})){
         const [scope,personId,metric,month,...extra]=id.split(':');
-        if(!extra.length&&!(scope==='pro'&&catalog.some(person=>person.id===personId))&&people.some(person=>person.scope===scope&&person.id===personId)&&metric==='revenue'&&validMonth(month)&&Number.isSafeInteger(value)&&value>=0)memory.scopedTargets[id]=value;
+        if(!extra.length&&!(metric==='revenue'&&scope==='pro'&&catalog.some(person=>person.id===personId))&&people.some(person=>person.scope===scope&&person.id===personId)&&validMetric(metric)&&validMonth(month)&&validCount(value))memory.scopedTargets[id]=value;
       }
       try{localStorage.setItem(key,JSON.stringify(memory));}catch{memoryOnly=true;}
       const snapshot=imported.snapshot;
       if(snapshot&&validDate(snapshot.from)&&validDate(snapshot.to)&&snapshot.from<=snapshot.to&&snapshot.actuals){
         const actuals={};for(const pro of catalog)if(Object.hasOwn(snapshot.actuals,pro.id)&&Number.isFinite(snapshot.actuals[pro.id]))actuals[pro.id]=snapshot.actuals[pro.id];
         const scopeActuals={};for(const role of ['accountManager','salesRep']){const values={};for(const person of people.filter(person=>person.scope===role))if(Object.hasOwn(snapshot.scopeActuals?.[role]||{},person.id)&&Number.isFinite(snapshot.scopeActuals[role][person.id]))values[person.id]=snapshot.scopeActuals[role][person.id];scopeActuals[role]=values;}
-        lastSnapshot={from:snapshot.from,to:snapshot.to,actuals,scopeActuals,scope:String(snapshot.scope||'Financial Overview selection'),capturedAt:snapshot.capturedAt};
+        const cleanCounts=(values,scope)=>Object.fromEntries(people.filter(person=>person.scope===scope&&validCount(values?.[person.id])).map(person=>[person.id,values[person.id]]));
+        const testActuals=cleanCounts(snapshot.testActuals,'pro'),scopeTestActuals=Object.fromEntries(['accountManager','salesRep'].map(role=>[role,cleanCounts(snapshot.scopeTestActuals?.[role],role)]));
+        lastSnapshot={from:snapshot.from,to:snapshot.to,actuals,scopeActuals,testActuals,scopeTestActuals,scope:String(snapshot.scope||'Financial Overview selection'),capturedAt:snapshot.capturedAt};
         try{localStorage.setItem(snapshotKey,JSON.stringify(lastSnapshot));}catch{memoryOnly=true;}
       }
     }
   }catch{}
-  window.dashboardTargets={key,snapshotKey,catalog,people,scopeLabels,validDate,validMonth,daysInMonth,monthly,getPeriodTarget,setMonthlyTarget,savedTarget,setScopedTarget,savedTargets,actualFor,assess,captureActuals,getSnapshot,link};
+  window.dashboardTargets={key,snapshotKey,catalog,people,scopeLabels,metricLabels,validMetric,validDate,validMonth,daysInMonth,monthly,getPeriodTarget,setMonthlyTarget,savedTarget,setScopedTarget,savedTargets,actualFor,assess,captureActuals,getSnapshot,link};
 })();

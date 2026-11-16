@@ -111,7 +111,7 @@ function syncFinancialSummaryAlternative() {
   const kpis = co('coKpis');
   if (!hero || !kpis) return;
   const bannerTitle = hero.querySelector('h1');
-  if (bannerTitle && bannerTitle.textContent !== 'Branch Overview') bannerTitle.textContent = 'Branch Overview';
+  if (bannerTitle && bannerTitle.textContent !== 'Financial Overview') bannerTitle.textContent = 'Financial Overview';
   hero.classList.add('financial-wide-banner');
   kpis.classList.add('financial-wide-kpis');
   hero.dataset.designName = kpis.dataset.designName = 'Wide Banner';

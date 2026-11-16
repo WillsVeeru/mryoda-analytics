@@ -59,7 +59,7 @@
   function alignTable(table){
     if(table.closest('.dashboard-formula-dialog,#financialFormulaSections'))return;
     // Map spanning headers to their actual columns; never borrow rows from a nested table.
-    const grid=[],records=[],labels=[],explicit=[];
+    const grid=[],records=[],labels=[],explicit=[],headers=[];
     [...table.rows].filter(row=>row.closest('table')===table).forEach((row,rowIndex)=>{
       grid[rowIndex]??=[];
       let column=0;
@@ -71,7 +71,7 @@
           grid[y]??=[];for(let x=column;x<column+width;x++)grid[y][x]=cell;
         }
         if(row.parentElement===table.tHead||!table.tHead&&cell.tagName==='TH')for(let x=column;x<column+width;x++){
-          labels[x]=cell.textContent.trim();explicit[x]=cell.dataset.salesAlign||cell.dataset.columnAlign;
+          labels[x]=cell.dataset.dashboardLabel||cell.textContent.trim();explicit[x]=cell.dataset.salesAlign||cell.dataset.columnAlign;headers[x]=cell;
         }
         column+=width;
       }
@@ -87,27 +87,26 @@
       if(row.parentElement===table.tFoot&&/\btotal\b|\bsummary\b/i.test(cell.textContent)&&!/[₹$€£]/.test(cell.textContent))align='left';
       cell.dataset.dashboardAlign=align;
     }
+    return{labels,headers,records};
   }
   function enhanceTables(){
     document.querySelectorAll('main table,dialog table').forEach(table=>{
-      alignTable(table);
+      const structure=alignTable(table);
       // Financial Overview already supplies the reference theme and its semantic colours.
       if(table.matches('.co-financial-table')||table.closest('.dashboard-formula-dialog,#financialFormulaSections'))return;
       table.classList.add('dashboard-financial-table');
       let surface=table.parentElement;
-      if(!surface.matches('.table-scroll,.rev-scroll,.specialty-scroll,.tp-table-scroll,.co-table-wrap,.dashboard-table-surface')){
+      if(!surface.matches('.table-scroll,.rev-scroll,.specialty-scroll,.tp-table-scroll,.co-table-wrap,.targets-comparison-wrap,.dashboard-table-surface')){
         surface=document.createElement('div');table.before(surface);surface.append(table);
       }
       surface.classList.add('dashboard-table-surface');
       const header=table.tHead?.rows[table.tHead.rows.length-1];if(!header)return;
-      const labels=[...header.cells].map(cell=>cell.textContent.trim());
-      if(testsPage)for(const row of table.tHead.rows)for(const cell of row.cells)cell.dataset.dashboardHeaderTone=testsHeaderTone(cell.textContent);
-      if(referrersPage)for(const row of table.tHead.rows)for(const cell of row.cells)cell.dataset.dashboardHeaderTone=referrerHeaderTone(cell.textContent);
-      const columnTones=[...header.cells].map(cell=>cell.dataset.dashboardHeaderTone||cell.dataset.tatHeaderTone||'');
-      for(const row of table.rows){
-        let column=0;
-        for(const cell of row.cells){
-          const label=labels[column]||'',single=cell.colSpan===1;
+      const headers=structure?.headers||[...header.cells],labels=structure?.labels||headers.map(cell=>cell.textContent.trim());
+      if(testsPage)for(const row of table.tHead.rows)for(const cell of row.cells)cell.dataset.dashboardHeaderTone=cell.dataset.columnTone||testsHeaderTone(cell.textContent);
+      if(referrersPage)for(const row of table.tHead.rows)for(const cell of row.cells)cell.dataset.dashboardHeaderTone=cell.dataset.columnTone||referrerHeaderTone(cell.textContent);
+      const columnTones=headers.map(cell=>cell.dataset.dashboardHeaderTone||cell.dataset.tatHeaderTone||'');
+      for(const {cell,column,width} of structure.records){
+          const label=labels[column]||'',single=width===1;
           const columnTone=single?columnTones[column]:'';
           if(columnTone)cell.dataset.dashboardColumnTone=columnTone;else delete cell.dataset.dashboardColumnTone;
           if(referrersPage&&columnTone==='inflow'&&/^[-−]/.test(cell.textContent.trim().replace(/[₹,\s]/g,'')))cell.dataset.dashboardNegative='true';else delete cell.dataset.dashboardNegative;
@@ -115,8 +114,6 @@
           if(semantic)cell.dataset.dashboardTone=semantic;else delete cell.dataset.dashboardTone;
           const numeric=column>0&&/bills|patients|tests|volume|count|samples|runs|passed|failed|pending|%|share|amount|revenue|gross|net|cost|spend|discount|refund|ticket/i.test(label)&&!/name|detail|category|panel|reason|source|mode|login|designation|terms|channel/i.test(label);
           if(single&&numeric)cell.dataset.dashboardNumeric='true';else delete cell.dataset.dashboardNumeric;
-          column+=cell.colSpan;
-        }
       }
     });
   }

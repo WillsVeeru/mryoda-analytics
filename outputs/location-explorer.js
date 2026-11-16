@@ -4,10 +4,10 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number=v=>Number(v).toLocaleString('en-IN'),money=v=>'₹'+number(v),date=v=>new Date(v+'T00:00:00Z').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
   const definitions={
-    centres:{title:'Centres',columns:['Centre','City','COCO/FOCO','Bills','Tests','Patients','Revenue'],types:['text','text','text','number','number','number','money'],metric:6},
-    clients:{title:'Clients at this centre',columns:['Client ID','Client','Type','PRO','Bills','Tests','Patients','Revenue'],types:['number','text','text','text','number','number','number','money'],metric:7},
-    categories:{title:'Test-category mix',columns:['Test category','Bills','Tests','Revenue'],types:['text','number','number','money'],metric:3},
-    tests:{title:'Individual tests',columns:['Test','Volume','Revenue'],types:['text','number','money'],metric:2}
+    centres:{title:'Centers',columns:['Centre','City','COCO/FOCO','Bills','Tests','Patients','Revenue'],types:['text','text','text','number','number','number','money'],metric:6},
+    clients:{title:'Client Summary',columns:['Client ID','Client','Type','PRO','Bills','Tests','Patients','Revenue'],types:['number','text','text','text','number','number','number','money'],metric:7},
+    categories:{title:'Department/Category Summary',columns:['Test category','Bills','Tests','Revenue'],types:['text','number','number','money'],metric:3},
+    tests:{title:'Test Summary',columns:['Test','Volume','Revenue'],types:['text','number','money'],metric:2}
   };
   const states=Object.fromEntries(Object.keys(definitions).map(id=>[id,{page:1,size:10,sort:null,asc:true,search:'',chart:false}]));
   let centre=null,clientId=null,category=null;
@@ -36,17 +36,17 @@
   const arrow=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
   function breadcrumbs(){
     if(!centre)return '';
-    const items=[['All centres','root'],[centre,clientId!==null?'centre':null]];
+    const items=[['All branches','root'],[centre,clientId!==null?'centre':null]];
     if(clientId!==null)items.push([currentClient()[1],category?'client':null]);if(category)items.push([category,null]);
-    return '<nav class="doctors-breadcrumb" aria-label="Location report breadcrumbs"><ol>'+items.map(([name,target],i)=>'<li>'+(i?arrow():'')+(target?'<button type="button" data-location-back="'+target+'">'+esc(name)+'</button>':'<span aria-current="page">'+esc(name)+'</span>')+'</li>').join('')+'</ol></nav>';
+    return '<nav class="doctors-breadcrumb dashboard-report-breadcrumb" aria-label="Location report breadcrumbs"><ol>'+items.map(([name,target],i)=>'<li>'+(i?arrow():'')+(target?'<button type="button" data-location-back="'+target+'">'+esc(name)+'</button>':'<span aria-current="page">'+esc(name)+'</span>')+'</li>').join('')+'</ol></nav>';
   }
   function breakdown(){
     if(!centre)return '';
-    const name=category||currentClient()?.[1]||centre,title=name+' · '+(category?'Test-level':clientId!==null?'Category-level':'Client-level')+' breakdown';
-    const label=category?'Category':clientId!==null?'Client':'Centre';
+    const name=category||currentClient()?.[1]||centre,title=name+' · '+(category?'Department/Category Summary':clientId!==null?'Client Summary':'Branch Summary');
+    const label=category?'Category':clientId!==null?'Client':'Branch';
     const row=category?data.categories[clientKey()]?.find(r=>r[0]===category):clientId!==null?currentClient():currentCentre();
     const cards=category?[['Bills',row[1]],['Tests',row[2]],['Revenue',row[3]]]:clientId!==null?[['Bills',row[4]],['Tests',row[5]],['Revenue',row[7]]]:[['Bills',row[3]],['Tests',row[4]],['Revenue',row[6]]];
-    return '<div class="doctors-breakdown-info"><h3>'+esc(title)+'</h3><p>'+label+' summary · Selected period: '+date(data.from)+' – '+date(data.to)+' · All '+label.toLowerCase()+' activity</p></div><dl class="doctors-context-summary">'+cards.map(([label,v],i)=>'<div><dt>'+label+'<span class="location-summary-icon" aria-hidden="true">'+icon(['Receipt','FlaskConical','Banknote'][i])+'</span></dt><dd>'+(i===2?money(v):number(v))+'</dd></div>').join('')+'</dl>';
+    return '<div class="doctors-breakdown-info dashboard-summary-info"><h3>'+esc(title)+'</h3><p>'+label+' summary · Selected period: '+date(data.from)+' – '+date(data.to)+' · All '+label.toLowerCase()+' activity</p></div><dl class="doctors-context-summary dashboard-context-summary">'+cards.map(([label,v],i)=>'<div><dt>'+label+'<span class="location-summary-icon dashboard-summary-icon" aria-hidden="true">'+icon(['Receipt','FlaskConical','Banknote'][i])+'</span></dt><dd>'+(i===2?money(v):number(v))+'</dd></div>').join('')+'</dl>';
   }
   function emptyMessage(){
     if(!scope().valid)return 'Select a valid date range.';
@@ -62,10 +62,11 @@
   }
   function renderTable(){
     const id=level(),def=definitions[id],state=states[id],rows=rowsFor(),pagination=pager(id,rows.length),visible=rows.slice((state.page-1)*state.size,state.page*state.size);
+    $('locationReportTitle').textContent=def.title;
     $('locationTableSearch').value=state.search;$('locationTableSearch').setAttribute('aria-label','Search '+def.title);
     $('locationReportNote').textContent=id==='centres'?'Select a centre to explore its clients, test categories and individual tests.':id==='clients'?'Select a client to view its test-category mix.':id==='categories'?'Select a category to view individual tests.':'Individual test volume and revenue for the selected category.';
     $('locationPeriod').textContent=scope().valid?'Selected period: '+date($('homeFrom').value)+' – '+date($('homeTo').value):'Choose valid dates';
-    $('locationTable').innerHTML=breadcrumbs()+(scope().valid&&scope().full?breakdown():'')+'<div class="doctors-table-wrap"><table class="doctors-table location-table" aria-label="'+esc(def.title)+'"><thead><tr>'+def.columns.map((label,i)=>'<th aria-sort="'+(state.sort===i?(state.asc?'ascending':'descending'):'none')+'"><button data-location-sort="'+i+'">'+label+'<span aria-hidden="true">'+(state.sort===i?(state.asc?'↑':'↓'):'↕')+'</span></button></th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map((v,i)=>'<td>'+((id==='centres'&&i===0||id==='clients'&&i===1||id==='categories'&&i===0)?'<button type="button" class="doctor-link" data-location-open="'+esc(id==='clients'?row[0]:v)+'" aria-label="View '+esc(v)+' breakdown">'+esc(v)+arrow()+'</button>':format(v,def.types[i]))+'</td>').join('')+'</tr>').join('')+(!rows.length?'<tr><td class="doctors-empty" colspan="'+def.columns.length+'">'+emptyMessage()+'</td></tr>':'')+'</tbody></table></div>'+pagination;
+    $('locationTable').innerHTML=breadcrumbs()+(scope().valid&&scope().full?breakdown():'')+'<div class="doctors-table-wrap"><table class="doctors-table location-table" aria-label="'+esc(def.title)+'"><thead><tr>'+def.columns.map((label,i)=>'<th aria-sort="'+(state.sort===i?(state.asc?'ascending':'descending'):'none')+'"><button data-location-sort="'+i+'">'+label+'<span aria-hidden="true">'+(state.sort===i?(state.asc?'↑':'↓'):'↕')+'</span></button></th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map((v,i)=>'<td>'+((id==='centres'&&i===0||id==='clients'&&i===1||id==='categories'&&i===0)?'<button type="button" class="doctor-link" data-location-open="'+esc(id==='clients'?row[0]:v)+'" aria-label="View '+esc(v)+' summary">'+esc(v)+arrow()+'</button>':format(v,def.types[i]))+'</td>').join('')+'</tr>').join('')+(!rows.length?'<tr><td class="doctors-empty" colspan="'+def.columns.length+'">'+emptyMessage()+'</td></tr>':'')+'</tbody></table></div>'+pagination;
     const chart=$('locationChart');chart.hidden=!state.chart;$('locationChartToggle').setAttribute('aria-expanded',String(state.chart));
     if(state.chart)window.dashboardReportCharts.render(chart,{key:'location-'+id,title:def.title,columns:def.columns,types:def.types,metric:def.metric,valueIndices:def.types.map((t,i)=>t==='number'||t==='money'?i:-1).filter(i=>i>=0&&def.columns[i]!=='Client ID'),rows,format:(v,t)=>t==='money'?money(v):number(v),close:'<button type="button" data-location-chart-close="true" aria-label="Close chart">&times;</button>'});
   }

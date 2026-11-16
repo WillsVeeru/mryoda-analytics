@@ -33,6 +33,16 @@
     if(all(final,special))add(/^routine net$/,'Routine net revenue','Final net − Specialty net',money(final)+' − '+money(special),final-special);
     const cost=item(/^cost$/),referral=item(/^referral$/);
     const targetAmount=item(/^(?:period )?target$/);
+    for(const period of ['previous','current']){
+      const target=item(new RegExp('^'+period+' target$')),actual=item(new RegExp('^'+period+' (?:net revenue|tests)$'));
+      if(all(target,actual)){
+        const title=period==='previous'?'Previous month':'Current month',difference=actual-target,status=difference<0?'Shortfall':difference>0?'Excess':'Target met';
+        const tests=find(new RegExp('^'+period+' tests$'))>=0,format=tests?count:money,measure=tests?'Test Count':'Net Revenue';
+        add(new RegExp('^'+period+' difference$'),title+' difference',title+' '+measure+' − Target',format(actual)+' − '+format(target),difference);
+        const index=find(new RegExp('^'+period+' status$'));
+        if(index>=0&&normal(texts[index])===normal(status))output.set(index,{title:title+' status',formula:'Compare '+title+' '+measure+' with Target',calculation:format(actual)+' − '+format(target)+' = '+format(difference)+' → '+status,note:''});
+      }
+    }
     if(!context.targetFooter&&all(net,targetAmount)){
       add(/^difference$/,'Target difference','Net Revenue − Target',money(net)+' − '+money(targetAmount),net-targetAmount);
       const position=find(/^shortfall\s*\/\s*excess$/),positionLabel=net<targetAmount?'Shortfall':net>targetAmount?'Excess':'On target';
@@ -151,7 +161,8 @@
     }
     document.querySelectorAll('main table').forEach(table=>{
       if(table.closest('.dashboard-formula-dialog')||!table.tHead?.rows.length)return;
-      const labels=[...table.tHead.rows[table.tHead.rows.length-1].cells].map(cell=>cell.textContent.replace(/\s+/g,' ').trim());
+      const mappedHeaders=[...table.tHead.querySelectorAll?.('[data-formula-column]')||[]].sort((a,b)=>Number(a.dataset.formulaColumn)-Number(b.dataset.formulaColumn));
+      const labels=(mappedHeaders.length?mappedHeaders:[...table.tHead.rows[table.tHead.rows.length-1].cells]).map(cell=>cell.dataset?.dashboardLabel||cell.textContent.replace(/\s+/g,' ').trim());
       const context=contextFor(table);
       for(const section of [...table.tBodies,table.tFoot].filter(Boolean))for(const row of section.rows){
         const cells=[...row.cells];if(cells.length!==labels.length||cells.some(cell=>cell.colSpan!==1))continue;

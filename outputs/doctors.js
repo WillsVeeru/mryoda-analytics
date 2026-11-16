@@ -30,19 +30,19 @@
   const arrow=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
   function breadcrumbs(){
     if(!selectedDoctor)return '';
-    return '<nav class="doctors-breadcrumb" aria-label="Doctor report breadcrumbs"><ol><li><button data-doctors-back="root">All doctors</button></li><li>'+arrow()+(selectedCategory?'<button data-doctors-back="doctor">'+esc(selectedDoctor)+'</button>':'<span aria-current="page">'+esc(selectedDoctor)+'</span>')+'</li>'+(selectedCategory?'<li>'+arrow()+'<span aria-current="page">'+esc(selectedCategory)+'</span></li>':'')+'</ol></nav>';
+    return '<nav class="doctors-breadcrumb dashboard-report-breadcrumb" aria-label="Doctor report breadcrumbs"><ol><li><button type="button" data-doctors-back="root">All doctors</button></li><li>'+arrow()+(selectedCategory?'<button type="button" data-doctors-back="doctor">'+esc(selectedDoctor)+'</button>':'<span aria-current="page">'+esc(selectedDoctor)+'</span>')+'</li>'+(selectedCategory?'<li>'+arrow()+'<span aria-current="page">'+esc(selectedCategory)+'</span></li>':'')+'</ol></nav>';
   }
   function contextSummary(){
     if(!selectedDoctor||!scope().valid||!scope().full)return '';
     const row=selectedCategory?data.categories[selectedDoctor]?.find(row=>row[0]===selectedCategory):data.top.find(row=>row[0]===selectedDoctor);
     if(!row)return '';
     const values=selectedCategory?[['Category bills',number(row[1])],['Category tests',number(row[2])],['Category revenue',money(row[3])]]:[['Doctor bills',number(row[3])],['Patients',number(row[4])],['Doctor revenue',money(row[5])]];
-    return '<dl class="doctors-context-summary">'+values.map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+value+'</dd></div>').join('')+'</dl>';
+    return '<dl class="doctors-context-summary dashboard-context-summary">'+values.map(([label,value],index)=>'<div><dt>'+label+'<span class="dashboard-summary-icon" aria-hidden="true">'+icon((selectedCategory?['Receipt','FlaskConical','Banknote']:['Receipt','Users','Banknote'])[index])+'</span></dt><dd>'+value+'</dd></div>').join('')+'</dl>';
   }
   function breakdownInfo(){
     if(!selectedDoctor)return '';
     const title=selectedCategory?selectedCategory.toLowerCase().replace(/\b\w/g,char=>char.toUpperCase())+' · Test-level breakdown':selectedDoctor+' · Category-level breakdown';
-    return '<div class="doctors-breakdown-info"><h3>'+esc(title)+'</h3><p>'+(selectedCategory?'Category':'Doctor')+' summary · Selected period: '+esc($('doctorsPeriod').textContent)+' · All '+(selectedCategory?'category':'doctor')+' activity</p><p class="doctors-note">'+esc($('doctors-note-top').textContent)+'</p></div>';
+    return '<div class="doctors-breakdown-info dashboard-summary-info"><h3>'+esc(title)+'</h3><p>'+(selectedCategory?'Category':'Doctor')+' summary · Selected period: '+esc($('doctorsPeriod').textContent)+' · All '+(selectedCategory?'category':'doctor')+' activity</p><p class="doctors-note">'+esc($('doctors-note-top').textContent)+'</p></div>';
   }
   function pagination(report,id,total){
     const state=states[id],pages=Math.max(1,Math.ceil(total/state.size));state.page=Math.max(1,Math.min(state.page,pages));

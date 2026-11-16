@@ -44,3 +44,6 @@ for(const f of ['home.html','revenue-sales.html','specialty.html','tests-patient
 (async()=>{const csv=await fullCsv.text();assert.equal(csv.split('\r\n').length,57);assert(csv.includes('CORTISOL - MORNING SAMPLE'));assert(csv.includes('-10100'));console.log('PASS: exact PDF fingerprint, '+capturedTests+' captured tests reconcile to category totals, source scopes, filters/KPIs, separate drilldowns, pagination, chart controls, complete CSV, formulas and sidebar links.');})();
 
 click({clientOpen:'client',name:'987'});click({clientOpen:'category',name:'BIOCHEMISTRY'});const breakdownMarkup=ids.get('clients-table-top').innerHTML;assert(breakdownMarkup.indexOf('doctors-breadcrumb')<breakdownMarkup.indexOf('doctors-breakdown-info'));assert(breakdownMarkup.indexOf('doctors-breakdown-info')<breakdownMarkup.indexOf('doctors-context-summary'));assert.equal(ids.get('clients-heading-top').textContent,'Top clients');
+
+for(const name of ['dashboard-report-breadcrumb','dashboard-summary-info','dashboard-context-summary'])assert(breakdownMarkup.includes(name));
+assert.equal((breakdownMarkup.match(/class="dashboard-summary-icon"/g)||[]).length,3);

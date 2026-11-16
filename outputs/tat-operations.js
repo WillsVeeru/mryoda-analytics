@@ -92,12 +92,13 @@
     const rows=detailRows(),pagination=pager('detail',detailState,rows.length);
     const visible=rows.slice((detailState.page-1)*detailState.size,detailState.page*detailState.size);
     const summaryRow=scope().valid&&scope().full?data.categories.find(row=>row[0]===category):null;
-    const summary=summaryRow?'<div class="tat-category-summary"><p>Category summary · Selected period · All category activity</p><dl>'+[
+    const summary=summaryRow?'<dl class="tat-category-summary dashboard-context-summary" data-summary-columns="4">'+[
       ['Tests',number(summaryRow[1])],['Average total TAT',formatted(summaryRow[2],'hours')],
       ['Average lab processing',formatted(summaryRow[3],'hours')],['Within 24h',formatted(summaryRow[4],'percent')]
-    ].map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+value+'</dd></div>').join('')+'</dl></div>':'';
+    ].map(([label,value],index)=>'<div data-summary-tone="'+['neutral','inflow','benchmark','result'][index]+'"><dt>'+label+'<span class="dashboard-summary-icon" aria-hidden="true">'+icon(['FlaskConical','CalendarClock','Activity','CircleCheck'][index])+'</span></dt><dd>'+value+'</dd></div>').join('')+'</dl>':'';
+    const selected=scope(),caption=selected.valid?'Selected period: '+date(selected.from)+' – '+date(selected.to):'Choose valid dates';
     const empty=!scope().valid||!scope().full?emptyMessage('categories'):!data.tests.some(row=>row[1]===category)&&category!=='BIOCHEMISTRY'?'Test-level detail for this category is not available in the supplied report.':'No available records match the selected filters.';
-    return '<section class="tat-category-detail-view" id="tat-category-details" aria-label="'+escape(category)+' test-level turnaround"><div class="tat-detail-head"><h3>'+escape(category==='BIOCHEMISTRY'?'Biochemistry':category)+' · Test-level breakdown</h3></div>'+summary+'<div class="tat-table-wrap"><table class="tat-table" aria-label="'+escape(category)+' tests"><thead><tr>'+detailColumns.map((c,index)=>'<th data-tat-header-tone="'+headerTone(c,'detail')+'" aria-sort="'+(detailState.sort===index?(detailState.ascending?'ascending':'descending'):'none')+'"><button data-sort="detail" data-column="'+index+'">'+c+' <span aria-hidden="true">'+(detailState.sort===index?(detailState.ascending?'↑':'↓'):'↕')+'</span></button></th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map((value,index)=>'<td data-tat-tone="'+tone(value,detailTypes[index],'tests',index)+'">'+formatted(value,detailTypes[index])+'</td>').join('')+'</tr>').join('')+(!rows.length?'<tr><td class="tat-empty" colspan="'+detailColumns.length+'">'+empty+'</td></tr>':'')+'</tbody></table></div>'+pagination+'</section>';
+    return '<section class="tat-category-detail-view" id="tat-category-details" aria-label="'+escape(category)+' test-level turnaround"><div class="tat-detail-head dashboard-summary-info"><h3>'+escape(category==='BIOCHEMISTRY'?'Biochemistry':category)+' · Test-level breakdown</h3><p>Category summary · '+escape(caption)+' · All category activity</p></div>'+summary+'<div class="tat-table-wrap"><table class="tat-table" aria-label="'+escape(category)+' tests"><thead><tr>'+detailColumns.map((c,index)=>'<th data-tat-header-tone="'+headerTone(c,'detail')+'" aria-sort="'+(detailState.sort===index?(detailState.ascending?'ascending':'descending'):'none')+'"><button data-sort="detail" data-column="'+index+'">'+c+' <span aria-hidden="true">'+(detailState.sort===index?(detailState.ascending?'↑':'↓'):'↕')+'</span></button></th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map((value,index)=>'<td data-tat-tone="'+tone(value,detailTypes[index],'tests',index)+'">'+formatted(value,detailTypes[index])+'</td>').join('')+'</tr>').join('')+(!rows.length?'<tr><td class="tat-empty" colspan="'+detailColumns.length+'">'+empty+'</td></tr>':'')+'</tbody></table></div>'+pagination+'</section>';
   }
   function emptyMessage(id) {
     const selected=scope();
@@ -108,7 +109,7 @@
   function categoryBreadcrumb(visible) {
     if(!expanded)return '';
     const current=expanded||($('tatCategory').value!=='All'?$('tatCategory').value:null);
-    return '<nav class="tat-category-breadcrumb" aria-label="Test category breadcrumb"><ol><li>'+(current?'<button type="button" data-category-home="true">All categories</button>':'<span aria-current="page">All categories</span>')+'</li>'+(current?'<li class="tat-breadcrumb-separator" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 5 7 7-7 7"/></svg></li><li><span aria-current="page">'+escape(current)+'</span></li>':'')+'</ol></nav>';
+    return '<nav class="tat-category-breadcrumb dashboard-report-breadcrumb" aria-label="Test category breadcrumb"><ol><li><button type="button" data-category-home="true">All categories</button></li><li>'+icon('ChevronRight')+'<span aria-current="page">'+escape(current)+'</span></li></ol></nav>';
   }
   function renderTable(def) {
     const {id}=def,state=states[id],rows=rowsFor(id),pagination=pager(id,state,rows.length);

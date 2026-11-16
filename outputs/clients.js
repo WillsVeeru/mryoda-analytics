@@ -45,17 +45,17 @@
   }
   const format=(value,type)=>value===null?'—':type==='money'?money(value):type==='number'?number(value):type==='date'?date(value):esc(value);
   const arrow=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>';
-  function breadcrumb(){return !clientId?'':'<nav class="doctors-breadcrumb" aria-label="Client report breadcrumbs"><ol><li><button data-client-back="root">All clients</button></li><li>'+arrow()+(category?'<button data-client-back="client">'+esc(currentClient()[1])+'</button>':'<span aria-current="page">'+esc(currentClient()[1])+'</span>')+'</li>'+(category?'<li>'+arrow()+'<span aria-current="page">'+esc(category)+'</span></li>':'')+'</ol></nav>';}
+  function breadcrumb(){return !clientId?'':'<nav class="doctors-breadcrumb dashboard-report-breadcrumb" aria-label="Client report breadcrumbs"><ol><li><button type="button" data-client-back="root">All clients</button></li><li>'+arrow()+(category?'<button type="button" data-client-back="client">'+esc(currentClient()[1])+'</button>':'<span aria-current="page">'+esc(currentClient()[1])+'</span>')+'</li>'+(category?'<li>'+arrow()+'<span aria-current="page">'+esc(category)+'</span></li>':'')+'</ol></nav>';}
   function summary(){
     if(!clientId||!scope().full||!filterTop().some(r=>r[0]===clientId))return '';
     const row=category?data.categories[clientId].find(r=>r[0]===category):currentClient();
     const cards=category?[['Category bills',row[1]],['Category tests',row[2]],['Category revenue',row[3]]]:[['Client bills',row[5]],['Patients',row[6]],['Client revenue',row[7]]];
-    return '<dl class="doctors-context-summary">'+cards.map(([label,v],i)=>'<div><dt>'+label+'</dt><dd>'+(i===2?money(v):number(v))+'</dd></div>').join('')+'</dl>';
+    return '<dl class="doctors-context-summary dashboard-context-summary">'+cards.map(([label,v],i)=>'<div><dt>'+label+'<span class="dashboard-summary-icon" aria-hidden="true">'+icon((category?['Receipt','FlaskConical','Banknote']:['Receipt','Users','Banknote'])[i])+'</span></dt><dd>'+(i===2?money(v):number(v))+'</dd></div>').join('')+'</dl>';
   }
   function breakdownInfo(){
     if(!clientId)return '';
     const title=category?category+' · Test-level breakdown':currentClient()[1]+' · Category-level breakdown';
-    return '<div class="doctors-breakdown-info"><h3>'+esc(title)+'</h3><p>'+(category?'Category':'Client')+' summary · '+esc($('clients-period-top').textContent)+' · All '+(category?'category':'client')+' activity</p><p class="doctors-note">'+esc($('clients-note-top').textContent)+'</p></div>';
+    return '<div class="doctors-breakdown-info dashboard-summary-info"><h3>'+esc(title)+'</h3><p>'+(category?'Category':'Client')+' summary · '+esc($('clients-period-top').textContent)+' · All '+(category?'category':'client')+' activity</p><p class="doctors-note">'+esc($('clients-note-top').textContent)+'</p></div>';
   }
   function pager(report,id,count){
     const state=states[id],pages=Math.max(1,Math.ceil(count/state.size));state.page=Math.max(1,Math.min(state.page,pages));

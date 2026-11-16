@@ -1,0 +1,45 @@
+const fs=require('fs');
+const original=fs.readFileSync('tmp/check-target-history.cjs','utf8');
+const setup=original.slice(0,original.indexOf('assert.equal(reference.length,18);')).replace("'dashboard-report-charts.js','targets-alerts.js'","'dashboard-report-charts.js','targets-alerts-sample.js','targets-alerts.js'");
+const verify=String.raw`
+assert.equal(api.rows().length,48);
+assert.equal(saved.size,0,'Preview samples must not write targets or actuals to storage');
+const initialRows=JSON.stringify(api.rows());
+for(const row of api.rows().filter(row=>row.source==='demo')){
+ for(const key of ['previousTarget','previousActual','previousDifference','target','actual','difference','expected','gap','achievement'])assert(Number.isFinite(row[key]),row.name+': '+key);
+ assert(row.sampleTarget&&row.samplePrevious&&row.sampleActual&&row.hasSample);
+ assert.equal(row.difference,row.actual-row.target);
+ assert.equal(row.previousDifference,row.previousActual-row.previousTarget);
+ assert.equal(row.previousStatus,row.previousDifference<0?'Shortfall':row.previousDifference>0?'Excess':'Target met');
+ assert.equal(row.expected,Math.round(row.target*16/30));
+ assert.equal(row.gap,row.actual-row.expected);
+ assert.equal(row.status,row.difference<0?'Shortfall':row.difference>0?'Excess':'Target met');
+ assert.equal(data.savedTarget(row.scope,row.id,'2026-11'),null);
+}
+assert(api.rows().some(row=>row.status==='Shortfall'));assert(api.rows().some(row=>row.status==='Excess'));
+assert.equal(cardValue('Targets set'),30);assert(ids.get('targetsNote').textContent.includes('Sample data'));
+assert(ids.get('targetsTable').innerHTML.includes('targets-sample-badge'));assert(ids.get('targetsTable').innerHTML.includes('>—<'));
+api.render();assert.equal(JSON.stringify(api.rows()),initialRows);
+const person=data.people.find(row=>row.id==='BENGALURU-PRO01'),before=get(person.id),previous=before.previousTarget;
+choosePeriod('2026','10');assert.equal(get(person.id).target,previous,'Previous sample target matches the same person in that month');
+choosePeriod('2026','11');assert.equal(get(person.id).actual,before.actual);
+ids.get('targetSearch').value=person.name;fire('targetSearch','input',{});assert.equal(api.rows().length,1);assert.equal(get(person.id).actual,before.actual);assert.equal(cardValue('Targets set'),1);allScopes();
+click({targetEdit:person.id,scope:'pro'});assert.equal(ids.get('targetValue').value,String(before.target));assert(ids.get('targetPersonHelp').textContent.includes('Sample target'));
+assert(save('pro',person.id,'0'));assert.equal(get(person.id).target,0);assert(!get(person.id).sampleTarget);assert.equal(get(person.id).actual,before.actual,'Changing a target cannot change sample revenue');assert.equal(get(person.id).status,'Excess');
+assert(save('pro',person.id,String(before.actual)));assert.equal(get(person.id).status,'Target met');assert.equal(get(person.id).difference,0);
+const pro='HYDERABAD-PRO01';data.setScopedTarget('pro',pro,'2026-10',0);
+data.captureActuals({from:'2026-11-01',to:'2026-11-16',centerIds:['hyderabad'],records:[],scope:'Available actuals'});allScopes();
+assert.equal(get(pro).actual,0);assert(!get(pro).sampleActual);assert.equal(get(pro).previousTarget,0);assert(!get(pro).samplePrevious);assert.equal(get(pro).status,'Shortfall');
+const snapshot=JSON.stringify(data.getSnapshot());api.render();assert.equal(JSON.stringify(data.getSnapshot()),snapshot);
+click({targetSort:'2'});const values=api.rows().map(row=>row.target).filter(value=>value!==null);assert(values.every((value,index)=>index===0||value>=values[index-1]));
+fire('targetsSize','change',{value:'5'});fire('targetsLast','click',{});assert.equal(ids.get('targetsPage').textContent,'Page 10 of 10');assert.equal(cardValue('Targets set'),30);
+fire('targetsChartToggle','click',{});assert(ids.get('targetsChart').innerHTML.includes('Previous month target'));fire('targetsChart','click',{closest:()=>({})});
+api.exportCsv();const blob=payload;
+choosePeriod('2026','12');allScopes();assert(api.rows().filter(row=>row.source==='demo').every(row=>row.target!==null&&row.previousTarget!==null&&row.actual===0&&row.status==='Not started'&&row.difference===null));
+assert.equal(cardValue('Ahead of pace'),0);assert.equal(cardValue('Behind pace'),0);
+choosePeriod('2024','02');allScopes();assert.equal(api.period().days,29);assert(api.rows().every(row=>row.expected===row.target));
+const helper=fs.readFileSync('targets-alerts-sample.js','utf8');assert(!helper.includes('localStorage'));assert(!helper.includes('Math.random'));
+assert(html.indexOf('src="targets-alerts-sample.js"')<html.indexOf('src="targets-alerts.js"'));assert(html.includes('Sample preview values'));
+return (async()=>{const csv=await blob.text();assert.equal(csv.split('\r\n').length,49);assert(csv.includes('"Current target source","Actual revenue source","Previous target source"'));assert(csv.includes('"Sample","Sample","Sample"'));assert(csv.includes('"Sample","Financial Overview","Saved"'));console.log('PASS: 30 labelled demo rows and 18 people without invented activity; stable monthly history and revenue; saved/zero targets and actuals take priority; correct differences, statuses and KPI totals; no automatic writes to shared targets or snapshots; edit/save, search, sort, pagination, charts, sample-aware CSV, future and leap-month handling.');})();
+`;
+new Function('require',setup+verify)(require).catch(error=>{console.error(error);process.exitCode=1;});

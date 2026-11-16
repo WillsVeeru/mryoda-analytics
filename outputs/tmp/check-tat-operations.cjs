@@ -33,6 +33,9 @@ fire('tatShowAll','change',{checked:true});assert.equal(ids.get('tatTabs').hidde
 fire('tatShowAll','change',{checked:false});assert.equal(ids.get('tatTabs').hidden,false);assert.equal(ids.get('tat-group-quality').hidden,true);
 function click(dataset){fire('tatReports','click',{closest:()=>({dataset})});}
 click({category:'BIOCHEMISTRY'});assert(ids.get('tat-table-categories').innerHTML.includes('Biochemistry'));assert(ids.get('tat-table-categories').innerHTML.includes('SERUM PROLACTIN')===false);
+const detail=ids.get('tat-table-categories').innerHTML;
+assert(detail.indexOf('dashboard-report-breadcrumb')<detail.indexOf('dashboard-summary-info'));assert(detail.indexOf('dashboard-summary-info')<detail.indexOf('dashboard-context-summary'));assert(detail.indexOf('dashboard-context-summary')<detail.indexOf('<table'));
+assert(detail.includes('Selected period: 6 Nov 2026 – 12 Nov 2026'));assert.equal((detail.match(/class="dashboard-summary-icon"/g)||[]).length,4);assert(detail.includes('data-summary-columns="4"'));
 assert.equal((ids.get('tat-table-categories').innerHTML.match(/<table\b/g)||[]).length,1);
 assert(!ids.get('tat-table-categories').innerHTML.includes('tat-detail-cell'));
 assert(ids.get('tat-table-categories').innerHTML.includes('<span aria-current="page">BIOCHEMISTRY</span>'));

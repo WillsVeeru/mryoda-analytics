@@ -62,6 +62,10 @@ tables=[group];observerCallback();
 assert.deepEqual(aligns(group.tHead.rows[0]),['left','center','right']);
 assert.deepEqual(aligns(group.tHead.rows[1]),['center','center','right','right']);
 assert.deepEqual(aligns(body(group)[0]),['left','center','center','right','right']);
+assert.equal(body(group)[0].cells[3].dataset.dashboardTone,'inflow');
+assert.equal(body(group)[0].cells[4].dataset.dashboardTone,'result');
+assert.equal(group.tHead.rows[1].cells[2].dataset.dashboardTone,'inflow');
+assert.equal(group.tHead.rows[1].cells[3].dataset.dashboardTone,'result');
 assert.equal(body(group)[1].cells[0].dataset.dashboardAlign,'left');
 // Parent table must not apply its headers to a nested child table.
 const parent=fixture(['Client','Bills','Revenue'],[['YODA','10','₹100']]);

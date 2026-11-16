@@ -1,4 +1,5 @@
 /* Shared Financial Overview sidebar controls. */
+.reference-sidebar .reference-menu[data-sidebar-hidden="true"]{display:none!important}
 body > main,.reference-sidebar { transition:width .2s ease,margin-left .2s ease; }
 .reference-sidebar .reference-brand { position:relative; padding-right:48px; }
 .center-sidebar-controls { position:absolute; top:14px; right:12px; display:flex; flex-direction:column; gap:5px; }

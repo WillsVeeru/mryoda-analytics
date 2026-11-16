@@ -1,5 +1,26 @@
 .targets-pro-id{display:block;margin-top:4px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
+.targets-pro-id:empty{display:none}
+.targets-sample-badge{display:inline-flex;margin-top:5px;padding:2px 7px;border-radius:6px;background:#edf3f8;color:#58748b;font-size:var(--dashboard-pagination-size);font-weight:var(--dashboard-weight-regular);line-height:1.5}
 .targets-alerts-page .doctors-table{min-width:1150px}
+.targets-alerts-page .targets-comparison-wrap{overflow-x:auto;isolation:isolate}
+.targets-alerts-page .targets-comparison-table{table-layout:fixed;width:100%;min-width:1590px}
+.targets-person-column{width:320px}
+.targets-scope-column{width:100px}
+.targets-money-column{width:140px}
+.targets-status-column{width:120px}
+.targets-action-column{width:90px}
+.targets-alerts-page .targets-comparison-table tbody td:first-child,
+.targets-alerts-page .targets-comparison-table thead tr:first-child th:first-child{min-width:320px;max-width:none}
+.targets-alerts-page .targets-comparison-table tbody td:first-child{position:sticky;left:0;z-index:2;white-space:normal;overflow-wrap:anywhere;box-shadow:4px 0 8px -6px #25463530}
+.targets-alerts-page .targets-comparison-table thead tr:first-child th:first-child{position:sticky;left:0;z-index:3}
+.targets-person-name{display:block}
+.targets-alerts-page .targets-comparison-table .targets-pro-id{white-space:normal;overflow-wrap:anywhere}
+.targets-alerts-page .targets-comparison-table .financial-target-status{box-sizing:border-box;max-width:100%;white-space:normal}
+.targets-alerts-page .targets-comparison-table thead th.targets-period-group{text-align:center!important}
+html body.targets-alerts-page .targets-comparison-table thead th.targets-period-group[data-target-period="previous"]{background:#f2f5f7!important;color:#536d7d!important;border-bottom:2px solid #c8d7df;box-shadow:none}
+html body.targets-alerts-page .targets-comparison-table thead th.targets-period-group[data-target-period="current"]{background:#edf6f0!important;color:#34744a!important;border-bottom:2px solid #9ac7a7;box-shadow:none}
+.targets-alerts-page .targets-comparison-table tbody td:nth-child(7),
+.targets-alerts-page .targets-comparison-table thead tr:last-child th:nth-child(5){border-left:2px solid #d9e6de}
 .targets-alerts-page .co-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 12px;border:1px solid #d5e3da;border-radius:10px;background:#fff;color:#39734c;font-size:var(--dashboard-control-size);text-decoration:none;cursor:pointer}
 .targets-alerts-page .co-btn:hover:not(:disabled){border-color:#bcd8c4;background:#edf6f0}
 .targets-alerts-page .co-btn:disabled{opacity:.5;cursor:default}
