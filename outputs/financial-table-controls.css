@@ -5,6 +5,15 @@
 .financial-table-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 12px}
 .financial-table-actions .co-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .financial-table-actions svg{width:15px;height:15px}
+.financial-section-summary{margin:0 0 18px;min-width:0}
+.financial-section-summary-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.financial-section-summary-heading h4{margin:0;color:var(--dashboard-ink);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium)}
+.financial-section-summary-heading>span{color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
+.financial-section-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.financial-section-summary-card{display:flex;flex-direction:column;position:relative;min-width:0}
+.financial-section-summary-icon{position:absolute;right:16px;top:16px;display:grid;place-items:center}
+.financial-section-summary-icon svg{width:17px;height:17px}
+@media(max-width:550px){.financial-section-summary-grid{grid-template-columns:minmax(0,1fr)}}
 .co-financial-table .financial-drill-name:has(.financial-branch-name){display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0}
 .financial-branch-name{display:block;min-width:0;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .co-financial-table .financial-branch-city{flex-shrink:0;color:#8197b4;font-size:10px;font-weight:500;letter-spacing:.035em;text-transform:uppercase;white-space:nowrap}

@@ -53,6 +53,8 @@
     if(all(received,brought,paid))add(/^net cash movement$/,'Net cash movement','Cash received + Cash brought in − Cash paid',money(received)+' + '+money(brought)+' − '+money(paid),received+brought-paid);
     const revenue=item(/^(?:net )?revenue$/),volume=item(/^(?:tests|volume|orders|bills|specialty orders)$/);
     if(all(revenue,volume))add(/^(?:avg\s*\/\s*test|avg ticket|average ticket|average per test)$/,'Average value','Revenue ÷ '+labels[find(/^(?:tests|volume|orders|bills|specialty orders)$/)]+(volume?'':'; zero records display 0'),volume?money(revenue)+' ÷ '+count(volume):'Record count is 0; display 0',volume?revenue/volume:0,volume?'Rounded to the precision shown.':'Division by zero is not performed.');
+    const billCount=item(/^bills$/);
+    if(all(revenue,billCount)&&billCount>0)add(/^avg bill$/,'Average bill','Revenue ÷ Bills',money(revenue)+' ÷ '+count(billCount),revenue/billCount,'Rounded to the precision shown.');
     const current=item(/^current period/),previous=item(/^previous period/);
     if(all(current,previous)){
       const change=current-previous;
@@ -70,6 +72,8 @@
       if(numerator!==null)add(/^(?:workload share|share(?: \(%\)| %)?|% of registered)$/,'Share percentage',context.shareLabel||'Group value ÷ Total in the same scope × 100',format(numerator)+' ÷ '+format(context.shareTotal)+' × 100',numerator/context.shareTotal*100,'Uses the full applicable report scope, including rows on other pages.');
     }
     const runs=item(/^(?:qc )?runs$/),passed=item(/^passed$/),failed=item(/^failed$/);
+    const orders=item(/^orders$/),billed=item(/^billed$/);
+    if(all(orders,billed)&&orders>0)add(/^billed\s*%$/,'Billed conversion','Billed orders ÷ Orders × 100',count(billed)+' ÷ '+count(orders)+' × 100',billed/orders*100);
     if(all(runs,passed)&&runs!==0)add(/^pass\s*%$/,'Pass rate','Passed runs ÷ Total runs × 100',count(passed)+' ÷ '+count(runs)+' × 100',passed/runs*100);
     if(all(runs,failed)&&runs!==0)add(/^failure\s*%$/,'Failure rate','Failed runs ÷ Total runs × 100',count(failed)+' ÷ '+count(runs)+' × 100',failed/runs*100);
     const expenseColumns=keys.map((key,index)=>/^(?:regular|expansion) (?:operating|capital) expenses$/.test(key)?index:-1).filter(index=>index>=0);
@@ -94,6 +98,7 @@
   const metadata=new WeakMap();let decorated=new Set(),active=null,scheduled=false,pinned=false;
   function contextFor(table){
     const context={};
+    if(table.dataset?.b2cReport&&window.yodaB2CPage)Object.assign(context,window.yodaB2CPage.formulaContext(table));
     const referenceId=table.closest('[id^="reference-section-"]')?.id?.replace('reference-section-','');
     const baseId=table.closest('[id^="table-"]')?.id?.replace('table-','');
     const specialtyId=table.closest('[id^="special-"]')?.id?.replace('special-','');

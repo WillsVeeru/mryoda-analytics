@@ -1,0 +1,51 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+const source=fs.readFileSync('center-overview-financial.js','utf8');
+function extract(name){const start=source.indexOf('function '+name+'(');assert(start>=0,name);let end=source.indexOf('\nfunction ',start+1);if(end<0)end=source.indexOf("\nwindow.addEventListener('storage'",start);return source.slice(start,end<0?source.length:end);}
+class Element{
+ constructor(tag='div',text=''){this.tag=tag;this.textContent=text;this.children=[];this.attrs={};this.listeners={};this.value='all';this.className='';this.hidden=false;this.classList={contains:name=>this.className.split(' ').includes(name)};}
+ appendChild(node){this.children.push(node);return node;}append(...nodes){nodes.forEach(node=>this.appendChild(node));}
+ setAttribute(key,value){this.attrs[key]=value;}addEventListener(name,fn){this.listeners[name]=fn;}
+ querySelector(selector){return null;}insertAdjacentElement(where,node){(this.adjacent??=[]).push({where,node});}
+ set innerHTML(html){this.html=html;if(this.tag==='tfoot'){this.rows=[{cells:[...html.matchAll(/<td[^>]*>(.*?)<\/td>/g)].map(m=>new Element('td',m[1].replace(/<[^>]*>/g,'')))}];}}
+ get innerHTML(){return this.html||'';}
+}
+const fields=new Map();const co=id=>{if(!fields.has(id))fields.set(id,new Element());return fields.get(id);};
+co('coFrom').value='2026-11-01';co('coTo').value='2026-11-16';
+const context={console,Map,Set,Number,Array,JSON,document:{createElement:tag=>new Element(tag),createTextNode:text=>new Element('#text',text)},Option:class extends Element{constructor(text,value){super('option',text);this.value=value;}},co,
+ financialTableCellText:cell=>cell.textContent,centerNumber:value=>Number(value).toLocaleString('en-IN'),centerMoney:value=>'₹'+Number(value).toLocaleString('en-IN'),financialAmount:value=>value===null?'—':'₹'+Number(value).toLocaleString('en-IN'),centerEscape:String,dashboardIcon:()=>'<svg></svg>',financialCells:(values,tag)=>values.map(value=>'<'+tag+'>'+value+'</'+tag+'>').join(''),
+ financialHeaderClientType:'all',financialHeaderClient:'all',financialView:'branch',financialTrail:[],financialCostPeriod:1,financialCustomComparison:null,financialPivotRows:'branch',financialPivotMeasure:'amount',financialPnlCptTreatment:'unconfirmed',cptUpload:'',financialMultiFilters:new Map(),financialTablePageStates:new Map(),financialTableControllers:new WeakMap(),financialModule:'Overall Revenue',financialExpenseView:'branch',
+ mountFinancialSortHeaders(){},sortFinancialTableGroups(){},renderFinancialTableChart(){},mountFinancialTableActions(controller){controller.actions=new Element();},exportFinancialDataTable(){}};
+vm.createContext(context);
+for(const name of ['financialSortValue','financialTableRowGroups','financialTablePageWindow','financialTableSummaryData','refreshFinancialTableSummary','enhanceFinancialTables'])vm.runInContext(extract(name),context);
+function makeTable(headers,rows,footer=null){const wrap=new Element(),table=new Element('table');table.tHead={rows:[{cells:headers.map(label=>new Element('th',label))}]};table.tBodies=[{rows:rows.map(values=>{const row=new Element('tr');row.cells=values.map(value=>new Element('td',value));return row;})}];table.tFoot=footer?{rows:[{cells:footer.map(value=>new Element('td',value))}]}:null;table.closest=selector=>selector==='.co-table-wrap'?wrap:null;table.createTFoot=()=>table.tFoot=new Element('tfoot');return table;}
+function mount(table,module='Overall Revenue',title){context.financialModule=module;const root={querySelector:()=>null,querySelectorAll:()=>[table]};context.enhanceFinancialTables(root,title);return context.financialTableControllers.get(table);}
+const rows=Array.from({length:23},(_,index)=>['Branch '+index,'2','10','₹1,000','₹100','₹800']);
+const table=makeTable(['Branch','Clients','Tests','Net Revenue','Cost','Net Margin'],rows,['Total','7','230','₹23,000','₹2,300','₹18,400']);
+const c=mount(table);let model=context.financialTableSummaryData(c);
+assert.equal(model.count,23);assert.equal(model.totals[1],'7','Distinct clients must not be summed across branches');
+assert.equal(model.metrics.find(metric=>metric.label==='Net Revenue').display,'₹23,000');
+assert.equal(c.groups.filter(group=>!group.row.hidden).length,10);assert.equal(table.tFoot.rows[0].cells[0].textContent,'All filtered total');
+const summary=c.summaryHost.innerHTML;
+for(const page of [2,3,1]){c.state.page=page;c.render();assert.equal(c.summaryHost.innerHTML,summary);assert.equal(table.tFoot.rows[0].cells[3].textContent,'₹23,000');}
+assert.equal(c.totalNote.textContent,'Total covers all filtered rows across every page');
+const inventory=makeTable(['Branch','Tests','Consumption (units)','Stock used value','Net revenue'],[['A','5','10','₹150','₹1,000'],['B','7','14','₹210','₹2,000']]);
+const i=mount(inventory,'Inventory');assert(inventory.tFoot);assert.equal(inventory.tFoot.rows[0].cells[1].textContent,'12');assert.equal(inventory.tFoot.rows[0].cells[2].textContent,'24');assert.equal(inventory.tFoot.rows[0].cells[3].textContent,'₹360');assert.equal(inventory.tFoot.rows[0].cells[4].textContent,'₹3,000');
+assert.deepEqual(Array.from(context.financialTableSummaryData(i).metrics,metric=>metric.label),['Stock used value','Consumption (units)']);
+const stock=makeTable(['Branch','2026-11','2026-10','Change (units)'],[['A','100','120','-20'],['B','200','190','10']]);mount(stock,'Inventory');assert.equal(stock.tFoot.rows[0].cells[1].textContent,'300');assert.equal(stock.tFoot.rows[0].cells[2].textContent,'310');assert.equal(stock.tFoot.rows[0].cells[3].textContent,'-10');
+const missing=makeTable(['Test','Tests','Cost','Net Margin'],[['A','2','₹100','₹50'],['B','3','—','—']]);mount(missing);assert.equal(missing.tFoot.rows[0].cells[1].textContent,'5');assert.equal(missing.tFoot.rows[0].cells[2].textContent,'—');assert.equal(missing.tFoot.rows[0].cells[3].textContent,'—');
+const rates=makeTable(['Test','Cost per test'],[['A','₹100'],['B','₹200'],['C','₹0']]);const r=mount(rates,'Live CPT');assert.equal(rates.tFoot,null);assert.equal(r.totalNote.textContent,'CPT rates are not additive');assert(r.summaryHost.innerHTML.includes('₹200'));assert(!r.summaryHost.innerHTML.includes('₹300'));
+const pnl=makeTable(['Line item','Amount','Basis'],[['Net Revenue','₹1,000',''],['Contribution','₹600',''],['Less: Employee Salaries','₹200','']],['Operating Profit / Loss','₹400','']);const p=mount(pnl,'Profit & Loss');assert.equal(pnl.tFoot.rows[0].cells[0].textContent,'Operating Profit / Loss');assert.equal(context.financialTableSummaryData(p).metrics.at(-1).display,'₹400');
+const comparison=makeTable(['Expense category','Current period 2026-11-01','Previous period 2026-10-01','Change Amount','Change (%)','Trend'],[['Operating','₹200','₹100','+₹100','+100.0%','Increase'],['Capital','₹100','₹200','-₹100','-50.0%','Decrease']],['Total Spend','₹300','₹300','₹0','0.0%','No change']);const q=mount(comparison,'Cost Analysis');assert.equal(context.financialTableSummaryData(q).metrics.at(-1).display,'0.0%','Use aggregate change rate, not sum of row percentages');
+context.financialPivotRows='category';const pivot=makeTable(['Expense category','A','B','Total Spend'],[['Regular Operating Expenses','40.0%','10.0%','50.0%'],['Regular Capital Expenses','20.0%','30.0%','50.0%']],['Total Spend','60.0%','40.0%','100.0%']);const pv=mount(pivot,'Cost Analysis');assert.equal(context.financialTableSummaryData(pv).metrics[0].display,'100.0%');
+const cash=makeTable(['Branch','Cash Received','Cash Brought In','Cash Paid','Net Cash Movement'],[['A','₹100','₹50','₹120','₹30']],['Selected branches','₹100','₹50','₹120','₹30']);const cf=mount(cash,'Cash Flow Statement');assert.equal(context.financialTableSummaryData(cf).metrics.length,4);
+const empty=makeTable(['Branch','Tests','Net Revenue'],[]);mount(empty);assert.equal(empty.tFoot.rows[0].cells[1].textContent,'0');assert.equal(empty.tFoot.rows[0].cells[2].textContent,'₹0');
+const revenue=makeTable(['Branch','Clients','Tests','Net Revenue','Cost','Referral','Net Margin'],[['A','4','12','₹1,000','₹200','₹50','₹750']],['Total','4','12','₹1,000','₹200','₹50','₹750']);const rv=mount(revenue);
+assert.deepEqual(Array.from(context.financialTableSummaryData(rv).metrics,metric=>metric.label),['Net Revenue','Cost','Referral','Net Margin']);assert(rv.summaryHost.innerHTML.includes('All filtered results'));
+const pro=makeTable(['PRO','Tests','Target','Net Revenue','Cost','Net Margin','Difference'],[['A','12','₹1,000','₹900','₹100','₹800','-₹100']],['Total','12','₹1,000','₹900','₹100','₹800','-₹100']);const pr=mount(pro);
+assert.deepEqual(Array.from(context.financialTableSummaryData(pr).metrics,metric=>metric.label),['Target','Net Revenue','Difference']);
+context.financialCostComparisonSummary={current:20000,previous:15000};const costs=mount(pivot,'Cost Analysis');let costMetrics=context.financialTableSummaryData(costs).metrics;
+assert.deepEqual(Array.from(costMetrics,metric=>metric.label),['Total Spend','Previous Period','Change Amount','Change %']);assert.equal(costMetrics[0].display,'₹20,000');assert.equal(costMetrics[3].display,'+33.3%');assert.equal(pivot.tFoot.rows[0].cells.at(-1).textContent,'100.0%');
+context.financialCostComparisonSummary={current:100,previous:0};costs.render();assert(costs.summaryHost.innerHTML.includes('New spend'));assert(costs.summaryHost.innerHTML.includes('No previous-period baseline'));context.financialCostComparisonSummary=null;
+i.isExpenseDetail=true;i.render();assert.equal(i.summaryHost.hidden,true);assert.equal(inventory.tFoot.rows[0].cells[3].textContent,'₹360');
+console.log('PASS: real table enhancer across 23 rows and three pages; fixed filtered totals/cards, distinct clients, new inventory/stock footers, missing CPT costs, non-additive rate and P&L handling, aggregate comparison percentages, pivot shares, cash summaries, and empty scope.');
+console.log('PASS: four key Revenue metrics, three PRO metrics, two Inventory metrics, four full-period Cost metrics, clear scope label and no extra summary cards in expanded expense details.');
