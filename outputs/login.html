@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to Mr Yoda Analytics, the internal workspace for branch performance, revenue and operations.">
+  <title>Sign in | Mr Yoda Analytics · Internal</title>
+  <link rel="stylesheet" href="dashboard-financial-foundation.css">
+  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="dashboard-theme.css">
+  <script src="lucide-ui.js" defer></script>
+  <script src="login.js" defer></script>
+</head>
+<body class="analytics-login-page">
+  <main class="auth-layout">
+    <section class="auth-brand-panel" aria-label="Mr Yoda Analytics">
+      <header class="auth-brand-header">
+        <div class="auth-brand" aria-label="Mr Yoda">
+          <svg class="auth-brand-symbol" width="32" height="34" viewBox="0 0 28 29" aria-hidden="true"><path d="M13 27C5 21 2 14 2 5c8 0 13 6 11 22M16 27c8-7 11-15 10-22-8 2-13 8-10 22" fill="#35B34A"/><circle cx="14" cy="4" r="3" fill="#35B34A"/></svg>
+          <span class="auth-wordmark"><span class="auth-mr">Mr.</span>yoda</span>
+        </div>
+        <span class="auth-product">ANALYTICS <span aria-hidden="true">/</span> INTERNAL</span>
+      </header>
+      <div class="auth-brand-content">
+        <div class="auth-eyebrow"><span></span> ONE VIEW. EVERY BRANCH.</div>
+        <h2>Your business.<br>A clearer perspective.</h2>
+        <p>Revenue, operations and team performance.<br>Connected in one workspace.</p>
+        <div class="auth-visual" aria-hidden="true">
+          <div class="auth-visual-top"><span class="auth-visual-icon" data-auth-icon="ChartColumn"></span><span>Business overview</span><span class="auth-visual-dots"><i></i><i></i><i></i></span></div>
+          <div class="auth-visual-tabs"><span>Revenue</span><span>Operations</span><span>Performance</span></div>
+          <div class="auth-visual-chart">
+            <svg viewBox="0 0 440 138" fill="none" preserveAspectRatio="none">
+              <path d="M0 30H440M0 68H440M0 106H440" stroke="#c7deeb" stroke-opacity=".12" stroke-dasharray="4 6"/>
+              <defs><linearGradient id="auth-chart-wash" x1="220" y1="15" x2="220" y2="138" gradientUnits="userSpaceOnUse"><stop stop-color="#6dd78a" stop-opacity=".22"/><stop offset="1" stop-color="#6dd78a" stop-opacity="0"/></linearGradient></defs>
+              <path d="M0 113 42 103 83 108 123 78 164 86 206 58 246 65 288 34 329 42 371 21 412 28 440 12V138H0Z" fill="url(#auth-chart-wash)"/>
+              <path d="m0 113 42-10 41 5 40-30 41 8 42-28 40 7 42-31 41 8 42-21 41 7 28-16" stroke="#7edb9a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="m0 124 42-7 41 2 40-9 41 3 42-17 40 7 42-20 41 3 42-12 41 1 28-10" stroke="#8cbbdf" stroke-opacity=".7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="371" cy="21" r="5" fill="#7edb9a" stroke="#29465b" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="auth-visual-bottom"><span><i></i>Financial clarity</span><span>Operational visibility <span aria-hidden="true">↗</span></span></div>
+        </div>
+        <div class="auth-capabilities"><span><i data-auth-icon="MapPin"></i>Branch insights</span><span><i data-auth-icon="TrendingUp"></i>Financial performance</span></div>
+      </div>
+      <footer class="auth-brand-footer"><span data-auth-icon="ShieldCheck"></span> A workspace for Mr Yoda teams.</footer>
+      <div class="auth-orbit auth-orbit-one" aria-hidden="true"></div><div class="auth-orbit auth-orbit-two" aria-hidden="true"></div>
+    </section>
+
+    <section class="auth-form-panel" aria-labelledby="loginTitle">
+      <div class="auth-form-card">
+        <div class="auth-access-label"><span data-auth-icon="ShieldCheck"></span> INTERNAL ACCESS</div>
+        <h1 id="loginTitle">Welcome back</h1>
+        <p class="auth-subtitle">Sign in to Mr Yoda Analytics.</p>
+        <form id="analyticsLogin" novalidate>
+          <div class="auth-field">
+            <label for="loginUsername">Staff ID or email</label>
+            <input id="loginUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Enter your staff ID or email" required aria-describedby="loginUsernameError">
+            <p id="loginUsernameError" class="auth-field-error" hidden></p>
+          </div>
+          <div class="auth-field">
+            <div class="auth-password-heading"><label for="loginPassword">Password</label><button type="button" class="auth-help-button" id="loginHelp">Forgot password?</button></div>
+            <div class="auth-password-wrap"><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" required aria-describedby="loginPasswordError loginCapsLock"><button type="button" id="loginPasswordToggle" class="auth-password-toggle" aria-label="Show password" aria-pressed="false" aria-controls="loginPassword">Show</button></div>
+            <p id="loginPasswordError" class="auth-field-error" hidden></p>
+            <p id="loginCapsLock" class="auth-caps-lock" role="status" hidden>Caps Lock is on.</p>
+          </div>
+          <div id="loginMessage" class="auth-message" role="alert" tabindex="-1" hidden></div>
+          <button type="submit" class="auth-submit" id="loginSubmit">Sign in <span data-auth-icon="ArrowUpRight"></span></button>
+        </form>
+        <noscript><p class="auth-message">JavaScript is required for this sign-in preview. You can still open the dashboard preview below.</p><style>.auth-submit{display:none!important}</style></noscript>
+        <div class="auth-preview"><span>Reviewing the dashboard?</span><a href="home.html" id="loginPreview">Open dashboard preview<span data-auth-icon="ChevronRight"></span></a></div>
+        <div class="auth-form-footer"><span data-auth-icon="Users"></span> Access is managed by your organisation.</div>
+      </div>
+      <footer class="auth-page-footer">Mr Yoda Analytics <span aria-hidden="true">·</span> Internal workspace</footer>
+    </section>
+  </main>
+  <dialog id="loginHelpDialog" class="auth-help-dialog" aria-labelledby="loginHelpTitle" aria-describedby="loginHelpDescription">
+    <div class="auth-help-heading"><span class="auth-help-icon" data-auth-icon="ShieldCheck"></span><button type="button" id="loginHelpClose" class="auth-dialog-close" aria-label="Close sign-in help"><span data-auth-icon="X"></span></button></div>
+    <h2 id="loginHelpTitle">Need help signing in?</h2>
+    <p id="loginHelpDescription">Contact your organisation’s system administrator to reset your password or request access to Mr Yoda Analytics.</p>
+    <button type="button" class="auth-submit" id="loginHelpDone">Got it</button>
+  </dialog>
+  <script src="dashboard-financial-foundation.js" defer></script>
+  <script src="dashboard-value-formulas.js" defer></script>
+</body>
+</html>

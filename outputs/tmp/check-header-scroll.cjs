@@ -28,7 +28,7 @@ const absent=setup(false);assert.equal(absent.classes.size,0);assert.equal(Objec
 const css=fs.readFileSync('dashboard-theme.css','utf8');
 assert(css.includes('position:sticky!important'));assert(css.includes('header.dashboard-scroll-header.dashboard-header-hidden'));
 assert(css.includes('header.dashboard-scroll-header { transition:none; }'));assert(css.includes('position:static!important;transform:none!important;pointer-events:auto'));
-const pages=fs.readdirSync('.').filter(file=>file.endsWith('.html')&&!file.includes('Copy'));assert.equal(pages.length,14);
+const pages=fs.readdirSync('.').filter(file=>file.endsWith('.html')&&!file.includes('Copy')&&fs.readFileSync(file,'utf8').includes('class="reference-sidebar"'));assert.equal(pages.length,14);
 for(const file of pages){
  const html=fs.readFileSync(file,'utf8'),nav=html.match(/<nav[^>]*>[\s\S]*?<\/nav>/)[0];
  const items=[...nav.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].map(([,attrs,content])=>({attrs,label:content.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim()}));

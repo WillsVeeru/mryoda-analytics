@@ -1,0 +1,14 @@
+addEventListener('load',()=>setTimeout(async()=>{
+ const checks=[],assert=(condition,label)=>{if(!condition)throw Error(label);checks.push(label);},$=id=>document.getElementById(id),input=(id,value)=>{$(id).value=value;$(id).dispatchEvent(new Event('input',{bubbles:true}));},submit=()=>$('analyticsLogin').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+ const beforeStorage=JSON.stringify({...localStorage}),beforeSession=JSON.stringify({...sessionStorage});let requests=0;const previousFetch=window.fetch;window.fetch=()=>{requests++;throw Error('Unexpected authentication request');};
+ try{
+  assert(document.title.includes('Mr Yoda Analytics'),'Product title');assert(document.querySelector('.auth-brand').textContent.includes('yoda'),'Dashboard brand');assert(getComputedStyle($('loginUsername')).fontFamily.includes('Inter'),'Shared Inter font');
+  submit();assert(document.activeElement===$('loginUsername')&&!$('loginUsernameError').hidden,'Required staff ID validation and focus');assert($('loginPassword').getAttribute('aria-invalid')==='true','Required password validation');
+  input('loginUsername','staff.123');input('loginPassword','prototype-example');$('loginPasswordToggle').click();assert($('loginPassword').type==='text'&&$('loginPasswordToggle').getAttribute('aria-pressed')==='true','Password visibility');$('loginPasswordToggle').click();assert($('loginPassword').type==='password','Password concealed');
+  submit();assert(!$('loginMessage').hidden&&$('loginMessage').textContent.includes('not connected'),'Honest authentication availability');assert($('loginPassword').value===''&&document.activeElement===$('loginMessage'),'Password cleared without navigation');assert(location.pathname.endsWith('login-review.html'),'No simulated authentication redirect');assert(requests===0,'No authentication request');
+  $('loginHelp').focus();$('loginHelp').click();assert($('loginHelpDialog').open,'Access-help dialog');$('loginHelpDone').click();assert(!$('loginHelpDialog').open&&document.activeElement===$('loginHelp'),'Dialog dismissal and focus return');
+  input('loginPassword','pagehide-example');dispatchEvent(new Event('pagehide'));assert($('loginPassword').value==='','Password cleared on page leave');
+  assert(JSON.stringify({...localStorage})===beforeStorage&&JSON.stringify({...sessionStorage})===beforeSession,'Storage unchanged');assert($('loginPreview').getAttribute('href')==='home.html','Separately labelled dashboard preview');
+  assert(document.documentElement.scrollWidth<=innerWidth,'No horizontal page overflow');assert(!window.loginReviewErrors.length,'No browser errors');window.fetch=previousFetch;document.body.dataset.loginReview=JSON.stringify({pass:true,checks:checks.length,passed:checks});
+ }catch(error){window.fetch=previousFetch;document.body.dataset.loginReview=JSON.stringify({pass:false,error:error.stack,checks,errors:window.loginReviewErrors});}
+},200));
