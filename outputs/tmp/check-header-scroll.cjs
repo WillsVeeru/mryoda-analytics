@@ -28,7 +28,7 @@ const absent=setup(false);assert.equal(absent.classes.size,0);assert.equal(Objec
 const css=fs.readFileSync('dashboard-theme.css','utf8');
 assert(css.includes('position:sticky!important'));assert(css.includes('header.dashboard-scroll-header.dashboard-header-hidden'));
 assert(css.includes('header.dashboard-scroll-header { transition:none; }'));assert(css.includes('position:static!important;transform:none!important;pointer-events:auto'));
-const pages=fs.readdirSync('.').filter(file=>file.endsWith('.html')&&!file.includes('Copy'));assert.equal(pages.length,13);
+const pages=fs.readdirSync('.').filter(file=>file.endsWith('.html')&&!file.includes('Copy'));assert.equal(pages.length,14);
 for(const file of pages){
  const html=fs.readFileSync(file,'utf8'),nav=html.match(/<nav[^>]*>[\s\S]*?<\/nav>/)[0];
  const items=[...nav.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].map(([,attrs,content])=>({attrs,label:content.replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim()}));
@@ -41,4 +41,4 @@ for(const file of pages){
 }
 assert(fs.existsSync('qc-dashboard.html'));assert(fs.existsSync('center-overview.html'));
 assert(fs.readFileSync('application-sidebar.css','utf8').includes('.reference-menu[data-sidebar-hidden="true"]{display:none!important}'));
-console.log('PASS: retained/hidden QC and Center Overview entries on 13 pages; Financial Overview preserved; downward hide/upward reveal, jitter thresholds, top/bottom bounce, passive RAF throttling, focused/expanded filters, keyboard access, responsive restoration, reduced motion, print, and pages without a header.');
+console.log('PASS: retained/hidden QC and Center Overview entries on 14 pages; Financial Overview preserved; downward hide/upward reveal, jitter thresholds, top/bottom bounce, passive RAF throttling, focused/expanded filters, keyboard access, responsive restoration, reduced motion, print, and pages without a header.');

@@ -81,4 +81,4 @@ for(const value of ['left','center','right'])assert(css.includes('[data-dashboar
 for(const file of fs.readdirSync('.').filter(file=>file.endsWith('.html')&&!file.includes('Copy'))){
  const html=fs.readFileSync(file,'utf8');assert(html.includes('src="dashboard-financial-foundation.js"'),file);assert(html.includes('href="dashboard-theme.css"'),file);
 }
-console.log('PASS: shared alignment across all 13 dashboard pages, financial/cost reports, headers/body/totals, IDs, zero and negative values, missing values, percentages/durations, grouped headers, spans, nested tables, filter/drilldown updates and explicit overrides.');
+console.log('PASS: shared alignment across all 14 dashboard pages, financial/cost reports, headers/body/totals, IDs, zero and negative values, missing values, percentages/durations, grouped headers, spans, nested tables, filter/drilldown updates and explicit overrides.');

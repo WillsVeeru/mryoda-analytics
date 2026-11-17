@@ -42,10 +42,14 @@ assert.equal(api.formulaRowsFor('clients:GANGADHAR RAO')[0].length,6);assert.equ
 fire('salesReports','input',{dataset:{salesSearch:'clients:GANGADHAR RAO'},value:'3788'});assert.equal(count('clients:GANGADHAR RAO'),1);assert.equal(api.rowsFor('clients:GANGADHAR RAO')[0][0],3788);
 fire('salesReports','input',{dataset:{salesSearch:'clients:GANGADHAR RAO'},value:'wellness begumpet'});assert.equal(count('clients:GANGADHAR RAO'),1);
 fire('salesReports','input',{dataset:{salesSearch:'clients:GANGADHAR RAO'},value:''});api.exportCsv('clients:GANGADHAR RAO');const clientCsv=payload;
-click({salesOpen:'client',key:'clients:GANGADHAR RAO',value:'3788'});assert.equal(count('categories:GANGADHAR RAO::3788'),13);assert(ids.get('sales-report-performance').innerHTML.includes('YODA WELLNESS BEGUMPET · Test-category mix'));
+click({salesOpen:'client',key:'clients:GANGADHAR RAO',value:'3788'});assert.equal(count('categories:GANGADHAR RAO::3788'),13);assert(ids.get('sales-report-performance').innerHTML.includes('YODA WELLNESS BEGUMPET · Category-level breakdown'));
 let drillMarkup=ids.get('sales-report-performance').innerHTML;
 assert.equal((drillMarkup.match(/<table /g)||[]).length,1);assert(!drillMarkup.includes('<td colspan='));assert(!drillMarkup.match(/<tbody>([\s\S]*?)<\/tbody>/)[1].includes('aria-expanded='));
 assert(drillMarkup.includes('data-sales-back="root"'));assert(drillMarkup.includes('data-sales-back="clients"'));assert(drillMarkup.includes('aria-current="page" tabindex="-1">YODA WELLNESS BEGUMPET</span>'));
+assert(drillMarkup.includes('sales-breadcrumb dashboard-report-breadcrumb'));
+assert(drillMarkup.includes('doctors-breakdown-info dashboard-summary-info'));
+assert(drillMarkup.indexOf('sales-section-title')<drillMarkup.indexOf('dashboard-report-breadcrumb'));assert(drillMarkup.indexOf('dashboard-report-breadcrumb')<drillMarkup.indexOf('dashboard-summary-info'));
+assert(drillMarkup.includes('Client summary · Selected period:'));assert(drillMarkup.includes('Test counts and revenue by category for the selected client.'));
 assert(!api.contexts.has('performance'));assert(!api.contexts.has('clients:GANGADHAR RAO'));
 assert(ids.get('sales-heading-'+encodeURIComponent('categories:GANGADHAR RAO::3788')).focused);
 const categoryKey='categories:GANGADHAR RAO::3788';click({salesPage:categoryKey,target:'2'});assert.equal(api.stateFor(categoryKey).page,2);api.exportCsv(categoryKey);const categoryCsv=payload;

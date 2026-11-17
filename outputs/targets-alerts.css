@@ -43,7 +43,7 @@ html body.targets-alerts-page .targets-comparison-table thead th.targets-period-
 .targets-period-bar select,.targets-editor-grid select,.targets-editor-grid input,.targets-alerts-page .doctors-actions select{box-sizing:border-box;min-height:38px;padding:8px 12px;border:1px solid #d5e3da;border-radius:12px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size);max-width:100%}
 .targets-period-hint{margin-left:auto;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
 .targets-alerts-page .targets-alert-card{position:relative;padding-left:76px;min-height:116px}
-.targets-alert-icon{position:absolute;left:20px;top:22px;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#eef3f8;color:#526a84}
+.targets-alerts-page .targets-alert-icon{position:absolute;left:auto;right:20px;top:18px;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#eef3f8;color:#526a84}
 .targets-alert-icon svg{width:19px;height:19px}
 .targets-alert-card[data-alert-tone="negative"] .targets-alert-icon{background:#fff0f2;color:#ad4557}
 .targets-alert-card[data-alert-tone="positive"] .targets-alert-icon{background:#eaf8f0;color:#258458}

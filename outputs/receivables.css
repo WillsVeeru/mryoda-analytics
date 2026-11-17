@@ -1,0 +1,40 @@
+.receivables-page .receivables-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.receivables-page .dashboard-wide-banner .wide-banner-summary{display:block}
+.receivables-page .receivables-filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.receivables-filters label{display:flex;flex-direction:column;gap:7px;font-size:var(--dashboard-caption-size);color:var(--dashboard-muted);min-width:0;text-align:left}
+.receivables-page select{appearance:auto}
+.receivables-filters input,.receivables-filters select{box-sizing:border-box;min-height:38px;max-width:245px;border:1px solid #d5e3da;border-radius:12px;background:#fff;color:var(--dashboard-ink);padding:8px 12px;font-size:var(--dashboard-control-size)}
+.receivables-page .rec-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 12px;border:1px solid #d5e3da;border-radius:12px;background:#fff;color:#39734c;font-size:var(--dashboard-control-size);text-decoration:none;cursor:pointer}
+.receivables-page .rec-btn svg{width:15px;height:15px}.rec-btn:disabled{opacity:.45;cursor:default}
+.receivables-page .rec-apply{background:linear-gradient(180deg,#35b34a,#278436);color:#fff;border-color:#278436;min-height:38px}
+.receivables-page .rec-reset{margin-left:auto}
+.rec-presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.rec-presets button{border:0;border-radius:30px;padding:10px 14px;background:#f0f4f3;color:#738378;font-size:var(--dashboard-caption-size);cursor:pointer}.rec-presets button[aria-pressed="true"]{background:#278436;color:white}
+.rec-filter-note,.rec-data-note{font-size:var(--dashboard-caption-size);line-height:1.7;color:var(--dashboard-muted);margin:12px 0 0}.rec-data-note{margin:0 0 18px}
+.rec-sample-label{display:inline-flex;gap:5px;align-items:center;margin:0 0 0 8px;padding:3px 7px;border-radius:7px;background:#edf3f8;color:#58748b;font-size:var(--dashboard-pagination-size);font-weight:var(--dashboard-weight-regular)}
+.rec-layout-toolbar{margin-bottom:20px}.rec-groups{display:grid;gap:20px;min-width:0}
+.rec-report{margin:0!important;min-width:0}.rec-report .doctors-report-head{margin-bottom:16px}
+.rec-report .doctors-actions{margin-left:auto;justify-content:flex-end}.rec-report .doctors-actions input{width:185px}
+.rec-report .doctors-chart{position:relative;margin-bottom:18px;padding:16px;border:1px solid #e4ece7;border-radius:16px;background:linear-gradient(180deg,#fbfdfc,#f7fbf8)}
+.rec-report .doctors-chart>button{position:absolute;right:10px;top:8px;z-index:1}
+.rec-report .report-chart-visual svg{min-width:700px}
+.rec-table{min-width:700px}.rec-table[data-rec-table="invoices"]{min-width:1300px}
+.rec-table:has([data-rec-drill="client"]) :is(th,td):first-child{min-width:260px}
+.rec-table td:first-child small{display:block;margin:4px 0 0 22px;font-size:var(--dashboard-pagination-size);color:var(--dashboard-muted)}
+.rec-table td .rec-drill{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:2px 0;color:#276a47;font:inherit;text-align:left;cursor:pointer}.rec-drill svg{width:15px;height:15px;flex:none}.rec-drill:hover span{text-decoration:underline}
+.rec-table tfoot td{background:#f0f7f2;border-top:1px solid #d5e3da;font-weight:var(--dashboard-weight-semibold)}
+.rec-table [data-column-align="center"]{text-align:center}.rec-table [data-column-align="right"]{text-align:right}.rec-table [data-column-align="left"]{text-align:left}
+.rec-table th[data-column-align="right"] button{justify-content:flex-end}.rec-table th[data-column-align="center"] button{justify-content:center}
+.rec-pill{display:inline-flex;padding:4px 8px;border-radius:20px;background:#f0f4f2;color:#718579;font-size:var(--dashboard-pagination-size)}
+html body.receivables-page .rec-table .rec-pill.positive{background:#e8f5ec!important;color:#216b39!important}
+html body.receivables-page .rec-table .rec-pill.warning{background:#fff3df!important;color:#8a5a00!important}
+html body.receivables-page .dashboard-financial-table.rec-table tbody td[data-dashboard-column-tone] .rec-positive,html body.receivables-page .rec-table tfoot .rec-positive{color:#216b39!important}
+html body.receivables-page .dashboard-financial-table.rec-table tbody td[data-dashboard-column-tone] .rec-negative,html body.receivables-page .rec-table tfoot .rec-negative{color:#9a4248!important}
+html body.receivables-page .rec-table .rec-age-0{color:#258458!important}html body.receivables-page .rec-table .rec-age-1{color:#9a6800!important}html body.receivables-page .rec-table .rec-age-2{color:#b46020!important}html body.receivables-page .rec-table .rec-age-3{color:#ad4557!important}
+.rec-report .dashboard-report-breadcrumb{margin-bottom:16px}.rec-report .dashboard-context-summary{margin:16px 0}.rec-report .dashboard-context-summary dl{margin:0}
+.rec-formula-body{padding:24px}.rec-formula-body article{padding:12px 0;border-bottom:1px solid var(--dashboard-line)}.rec-formula-body h3{font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium);margin:0 0 8px}.rec-formula-body p{font-size:var(--dashboard-caption-size);line-height:1.8;color:var(--dashboard-muted)}
+.receivables-page [hidden]{display:none!important}.receivables-page :is(button,input,select):focus-visible{outline:2px solid #348849;outline-offset:3px}
+.rec-error{margin:12px 0 0;color:#9a4248;font-size:var(--dashboard-caption-size)}
+@media(max-width:1150px){.receivables-page .receivables-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rec-report .doctors-actions{width:100%;justify-content:flex-start}}
+@media(max-width:1150px){html body.receivables-page .dashboard-wide-banner{flex-direction:column;align-items:stretch;gap:22px;padding:26px}html body.receivables-page .dashboard-wide-banner .wide-banner-summary{flex:auto;width:100%}.receivables-page .rec-reset{margin-left:0}}
+@media(min-width:651px) and (max-width:1150px){.receivables-filters #recClient{width:210px}}
+@media(max-width:650px){.receivables-page .receivables-kpis{grid-template-columns:minmax(0,1fr)}.receivables-filters label{flex:1 1 140px}.receivables-filters :is(input,select){width:100%;max-width:100%}.receivables-page .rec-reset{margin-left:0}.rec-report .doctors-actions input{min-width:0;flex:1}.receivables-page .revenue-report-view-controls{width:auto;margin-left:auto}}

@@ -18,12 +18,13 @@
     return '';
   }
   function headingFor(table) {
+    const metricHeading=heading=>heading.closest('.kpi,.home-kpi,.revenue-kpi,.tp-stat,.co-kpi');
     for (let node = table; node && !node.matches('main, body, dialog'); node = node.parentElement) {
       for (let previous = node.previousElementSibling; previous; previous = previous.previousElementSibling) {
-        if (previous.matches('h2,h3,h4')) return previous;
+        if (previous.matches('h2,h3,h4')&&!metricHeading(previous)) return previous;
         // A preceding report has its own date label; never borrow its heading.
         if (previous.querySelector('table')) continue;
-        const headings = previous.querySelectorAll('h2,h3,h4');
+        const headings = [...previous.querySelectorAll('h2,h3,h4')].filter(heading=>!metricHeading(heading));
         if (headings.length) return headings[headings.length - 1];
       }
     }
@@ -34,6 +35,10 @@
     const moduleTable = table.closest('#financialOtherModule');
     if (moduleTable && typeof financialModule !== 'undefined') {
       if (financialModule === 'Live CPT') return 'Reference rates · not filtered by date';
+      if (financialModule === 'Cost Analysis' && typeof financialCostActivePeriod === 'function') {
+        const now = financialCostActivePeriod(), before = financialExpenseView === 'comparison' ? financialCostActivePeriod(true) : null;
+        return now ? (before ? 'Current: ' + range(now.start, now.end) + ' ? Compare with: ' + range(before.start, before.end) : 'Report dates: ' + range(now.start, now.end)) : 'Choose valid dates';
+      }
       if (financialModule === 'Cost Analysis' && typeof financialPeriod === 'function') {
         const now = financialPeriod(financialCostPeriod), before = financialPeriod(financialCostPeriod, true);
         return now && before ? 'Current: ' + range(now.start, now.end) + ' · Previous: ' + range(before.start, before.end) : 'Choose a valid reporting date';
@@ -55,7 +60,7 @@
       let label;
       if (heading) {
         const parent = heading.parentElement;
-        if (parent.matches('.rev-heading, .specialty-head, .tp-table-header, .section-heading, .co-section-heading')) {
+        if (parent.matches('.rev-heading, .specialty-head, .tp-table-header, .section-heading, .co-section-heading, .financial-section-summary-heading')) {
           const wrapper = document.createElement('div');
           wrapper.className = 'application-table-title-block';
           heading.before(wrapper);

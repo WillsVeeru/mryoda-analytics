@@ -1,4 +1,6 @@
 .location-explorer-page .clients-filters input{width:230px}
 .location-explorer-page .clients-filters select{max-width:240px}
 .location-explorer-page .location-table th:first-child,.location-explorer-page .location-table td:first-child{max-width:480px}
+.location-explorer-page .location-table[data-location-level="clients"] :is(th,td):first-child{min-width:220px;max-width:400px;white-space:normal}
+.location-explorer-page .location-client-id{display:block;margin:4px 0 0 22px;color:var(--dashboard-muted);font-size:var(--dashboard-pagination-size);font-weight:var(--dashboard-weight-regular);line-height:1.5}
 @media(max-width:800px){.location-explorer-page .clients-filters input{width:100%}}

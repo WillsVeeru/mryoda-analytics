@@ -157,6 +157,7 @@ body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[
 body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="deduction"] { --report-heading-ink:#8a5a00; --report-heading-wash:#fffaf1; --report-heading-rule:#8a5a00; }
 body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="result"] { --report-heading-ink:#216b39; --report-heading-wash:#f3faf5; --report-heading-rule:#216b39; }
 body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="benchmark"] { --report-heading-ink:#65489a; --report-heading-wash:#faf8ff; --report-heading-rule:#65489a; }
+body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th[data-dashboard-header-tone="cost"] { --report-heading-ink:#9a4248; --report-heading-wash:#fff7f7; --report-heading-rule:#9a4248; }
 body:is(.tests-patients-page,.doctors-page) .dashboard-financial-table thead th button { color:inherit; font-weight:inherit; font-size:inherit; letter-spacing:inherit; line-height:inherit; text-transform:inherit; }
 /* Carry each header's semantic palette through the full table column. */
 [data-dashboard-column-tone="inflow"] { --column-ink:#2f6498; --column-wash:#f5f9fd; --column-hover:#edf5fc; }

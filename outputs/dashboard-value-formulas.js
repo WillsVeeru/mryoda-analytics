@@ -23,6 +23,12 @@
       if(index>=0&&matches(texts[index],expected))output.set(index,{title,formula,calculation:input+' = '+texts[index].trim(),note});
     };
     const all=(...items)=>items.every(value=>value!==null&&Number.isFinite(value));
+    const invoiced=item(/^invoiced$/),cashReceived=item(/^cash received$/),tds=item(/^tds$/),writeOff=item(/^write-offs$/);
+    if(all(invoiced,cashReceived,tds,writeOff))add(/^outstanding$/,'Outstanding balance','Invoiced − Cash received − TDS − Write-offs',money(invoiced)+' − '+money(cashReceived)+' − '+money(tds)+' − '+money(writeOff),invoiced-cashReceived-tds-writeOff);
+    const patientReceipts=item(/^patient receipts$/),invoicePayments=item(/^b2b invoice payments$/);
+    if(all(patientReceipts,invoicePayments))add(/^total$/,'Daily collections','Patient receipts + B2B invoice payments',money(patientReceipts)+' + '+money(invoicePayments),patientReceipts+invoicePayments);
+    const collectionAmount=item(/^collections$/),collectionTarget=item(/^period target$/);
+    if(all(collectionAmount,collectionTarget))add(/^difference$/,'Collection target difference','Collections − Period target',money(collectionAmount)+' − '+money(collectionTarget),collectionAmount-collectionTarget);
     const gross=item(/^gross(?: revenue)?$/),discount=item(/^discount(?: amount)?$/),refund=item(/^refunds?$/),net=item(/^net(?: revenue)?$/);
     if(all(gross,discount)){
       add(/^net(?: revenue)?$/,'Net revenue','Gross revenue − Discounts',money(gross)+' − '+money(discount),gross-discount);
@@ -65,7 +71,7 @@
     if(all(revenue,volume))add(/^(?:avg\s*\/\s*test|avg ticket|average ticket|average per test)$/,'Average value','Revenue ÷ '+labels[find(/^(?:tests|volume|orders|bills|specialty orders)$/)]+(volume?'':'; zero records display 0'),volume?money(revenue)+' ÷ '+count(volume):'Record count is 0; display 0',volume?revenue/volume:0,volume?'Rounded to the precision shown.':'Division by zero is not performed.');
     const billCount=item(/^bills$/);
     if(all(revenue,billCount)&&billCount>0)add(/^avg bill$/,'Average bill','Revenue ÷ Bills',money(revenue)+' ÷ '+count(billCount),revenue/billCount,'Rounded to the precision shown.');
-    const current=item(/^current period/),previous=item(/^previous period/);
+    const current=item(/^current period/),previous=item(/^(?:previous period|compare with)/);
     if(all(current,previous)){
       const change=current-previous;
       add(/^(?:change|variance) amount$/,'Change amount','Current period − Previous period',money(current)+' − '+money(previous),change);
@@ -109,6 +115,7 @@
   function contextFor(table){
     const context={};
     if(table.dataset?.salesContext&&window.salesTeamPage)context.fullRows=window.salesTeamPage.formulaRowsFor?.(table.dataset.salesContext)||window.salesTeamPage.rowsFor(table.dataset.salesContext);
+    if(table.dataset?.recContext&&window.receivablesPage)context.fullRows=window.receivablesPage.formulaRowsFor(table.dataset.recContext);
     if(table.dataset?.b2cReport&&window.yodaB2CPage)Object.assign(context,window.yodaB2CPage.formulaContext(table));
     const referenceId=table.closest('[id^="reference-section-"]')?.id?.replace('reference-section-','');
     const baseId=table.closest('[id^="table-"]')?.id?.replace('table-','');

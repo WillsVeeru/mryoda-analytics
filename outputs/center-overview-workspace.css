@@ -1250,14 +1250,14 @@ body.financial-overview-only .co-more-filters .financial-select-trigger {
 .cost-variance-status.flat { background:#f0f3f1; color:#7c8d83; }
 .co-financial-report .co-financial-table th small { display:block; margin-top:5px; color:#8d9b93; font-size:9px; font-weight:400; letter-spacing:0; text-transform:none; }
 .cost-analysis-toolbar {
-  margin:20px 0 18px;
-  padding:20px;
+  margin:16px 0 18px;
+  padding:16px 18px;
   border:1px solid #e2e9e5;
   border-radius:20px;
   background:linear-gradient(120deg,#fff 30%,#f8fbf9);
   box-shadow:0 5px 18px rgb(25 56 39 / 3%);
 }
-.cost-analysis-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; }
+.cost-analysis-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
 .cost-analysis-title { display:flex; align-items:center; gap:12px; }
 .cost-analysis-mark { display:grid; place-items:center; flex-shrink:0; width:42px; height:42px; border:1px solid #dbeade; border-radius:13px; background:#edf6ef; color:#347b49; }
 .cost-analysis-mark svg { width:20px; height:20px; }
@@ -1270,7 +1270,7 @@ body.financial-overview-only .cost-period-field .financial-select-trigger { min-
   align-items:stretch;
   gap:4px;
   max-width:100%;
-  margin:20px 0 0;
+  margin:0;
   padding:5px;
   border:1px solid #e1e8e3;
   border-radius:14px;
@@ -1304,8 +1304,9 @@ body.financial-overview-only .cost-period-field .financial-select-trigger { min-
   .cost-analysis-toolbar { padding:16px; }
   .cost-analysis-heading { gap:16px; }
   .cost-period-field { justify-content:space-between; width:100%; }
-  .co-financial-report .cost-view-switcher { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
-  .co-financial-report .cost-view-switcher button { padding:10px; }
+  .co-financial-report .co-insight-tabs.cost-view-switcher { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+  .co-financial-report .cost-view-switcher button { min-width:0; padding:10px; white-space:normal; }
+  .co-financial-report .cost-view-switcher button span { min-width:0; }
 }
 @media(prefers-reduced-motion:reduce) { .co-financial-report .cost-view-switcher button { transition:none; } }
 .co-financial-report .cost-breakdown-toggle {

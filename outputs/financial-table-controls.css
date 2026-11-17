@@ -18,6 +18,7 @@
 .financial-section-summary-heading h4{margin:0;color:var(--dashboard-ink);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium)}
 .financial-section-summary-heading>span{color:var(--dashboard-muted);font-size:var(--dashboard-caption-size)}
 .financial-section-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.financial-inventory-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:760px}
 .financial-section-summary-card{display:flex;flex-direction:column;position:relative;min-width:0}
 .financial-section-summary-icon{position:absolute;right:16px;top:16px;display:grid;place-items:center}
 .financial-section-summary-icon svg{width:17px;height:17px}
@@ -40,10 +41,82 @@ body #financialModules>button[aria-selected="true"]>svg{color:inherit}
 .financial-sort-indicator{display:inline-flex;flex:none;opacity:.45}
 th[aria-sort="ascending"] .financial-sort-indicator,th[aria-sort="descending"] .financial-sort-indicator{opacity:1}
 .financial-column-sort:hover .financial-sort-indicator{opacity:1}
-.co-custom-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0}
-.co-custom-comparison fieldset{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-width:0;margin:0;padding:14px 16px;border:1px solid #dce7df;border-radius:14px;background:#f8fbf9}
+.co-custom-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0;margin:0}
+.co-custom-comparison fieldset{display:flex;align-items:end;gap:10px;min-width:0;margin:0;padding:9px 12px 12px;border:1px solid var(--dashboard-line);border-radius:12px;background:#f8fbf9}
 .co-custom-comparison legend{padding:0 6px;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
-.co-custom-comparison label{display:flex;align-items:center;gap:8px;font-size:var(--dashboard-caption-size);color:var(--dashboard-muted)}
-.co-custom-comparison input{min-height:36px;min-width:145px;max-width:100%;border:1px solid #d5e3da;border-radius:12px;padding:7px 10px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+.co-custom-comparison label{display:grid;flex:1 1 0;min-width:0;gap:6px;font-size:var(--dashboard-control-size);color:var(--dashboard-muted)}
+.co-custom-comparison input{box-sizing:border-box;width:100%;min-height:38px;min-width:0;max-width:100%;border:1px solid #d5e3da;border-radius:12px;padding:7px 10px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
 .co-custom-comparison-error{margin:12px 0;color:#9a4248;font-size:var(--dashboard-caption-size)}
-@media(max-width:800px){.co-custom-comparison{grid-template-columns:1fr}.co-custom-comparison label{flex:1 1 160px}.co-custom-comparison input{width:100%}}
+.cost-report-dates,.cost-comparison-controls{min-width:0;margin:14px 0 0;padding:14px 0 0;border:0;border-top:1px solid var(--dashboard-line);border-radius:0;background:transparent}
+.cost-report-dates{display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px}
+.cost-filter-caption{min-width:150px}
+.cost-filter-caption>span{color:var(--dashboard-ink);font-size:var(--dashboard-control-size);font-weight:var(--dashboard-weight-medium)}
+.cost-filter-caption>p{margin:5px 0 0;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.5}
+.cost-report-date-fields{display:flex;align-items:end;flex-wrap:wrap;gap:10px}
+.cost-report-date-fields>label{display:grid;gap:6px;color:var(--dashboard-muted);font-size:var(--dashboard-control-size)}
+.cost-report-date-fields input,.cost-calendar-comparison select{box-sizing:border-box;min-height:38px;max-width:100%;padding:7px 11px;border:1px solid #d5e3da;border-radius:12px;background:#fff;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+.cost-report-date-fields input{width:160px;min-width:0}
+.cost-report-date-fields .co-btn{height:42px}
+.cost-report-dates>p{margin:0;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.6}
+.cost-report-dates>.cost-date-sync{margin-left:auto;text-align:right}
+.cost-report-dates>[role="alert"]{flex-basis:100%;color:#9a4248}
+.cost-report-dates>[role="alert"]:empty{display:none}
+.cost-report-period-fields{flex:1 1 600px;min-width:0}
+.cost-report-period-fields>label{flex:0 1 160px;min-width:0}
+.cost-report-period-fields>.cost-report-year{flex-basis:100px}
+.cost-report-period-fields>.cost-report-quarter,.cost-report-period-fields>.cost-report-half{flex-basis:180px}
+.cost-report-period-fields select{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 12px;border:1px solid #d5e3da;border-radius:12px;background:var(--dashboard-surface);color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+body.financial-overview-only .cost-report-period-fields .financial-select-trigger{width:100%;min-width:0;max-width:none;height:42px}
+.cost-report-period-preview{display:flex;align-items:center;flex-wrap:wrap;flex-basis:100%;gap:8px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.6}
+.cost-report-period-preview output{padding:4px 9px;border:1px solid var(--dashboard-line);border-radius:8px;background:#f1f7f3;color:var(--dashboard-ink);font-size:var(--dashboard-control-size)}
+.cost-report-pending{display:inline-flex;padding:3px 7px;border:1px solid #eedfc6;border-radius:7px;background:#fff8eb;color:#916018;font-size:var(--dashboard-pagination-size)}
+.cost-report-pending[hidden]{display:none}
+.cost-report-sync-note{margin-left:auto;font-size:var(--dashboard-pagination-size)}
+.cost-comparison-controls{display:grid;grid-template-columns:160px minmax(0,1fr);align-items:center;gap:10px 18px}
+.cost-comparison-controls>.cost-period-field{display:grid;align-content:center;justify-content:stretch;gap:6px;width:auto;font-size:var(--dashboard-control-size)}
+body.financial-overview-only .cost-comparison-controls .financial-select-trigger{width:100%;min-width:0;max-width:none;height:38px}
+.cost-comparison-controls>.cost-period-field>select{min-width:0;width:100%}
+.cost-comparison-controls>.co-sales-source-note{grid-column:2;margin:0;font-size:var(--dashboard-caption-size);line-height:1.5}
+.cost-calendar-comparison label:first-of-type{flex-grow:.7}
+.cost-calendar-comparison label:only-of-type{flex-grow:1}
+.cost-calendar-comparison select,.cost-calendar-comparison .financial-select-trigger{width:100%;min-width:0}
+.cost-analysis-toolbar>.cost-analysis-scope{margin:12px 0 0;font-size:var(--dashboard-caption-size);line-height:1.6}
+@media(max-width:1100px){.cost-report-dates>.cost-date-sync{display:none}.cost-comparison-controls{grid-template-columns:140px minmax(0,1fr);gap:10px 12px}.co-custom-comparison{gap:10px}.co-custom-comparison fieldset{padding-left:10px;padding-right:10px}}
+@media(max-width:900px){.cost-comparison-controls{grid-template-columns:minmax(0,1fr)}.cost-comparison-controls>.cost-period-field{display:flex;align-items:center;justify-content:flex-start;gap:10px}.cost-comparison-controls>.cost-period-field>select,body.financial-overview-only .cost-comparison-controls .cost-period-field .financial-select-trigger{width:160px}.cost-comparison-controls>.co-sales-source-note{grid-column:1}}
+@media(max-width:600px){.cost-analysis-toolbar{padding:14px}.cost-analysis-heading{gap:12px}.cost-report-dates{gap:12px}.cost-filter-caption{flex-basis:100%}.cost-report-date-fields{width:100%}.cost-report-date-fields>label{flex:1 1 120px}.cost-report-date-fields input{width:100%;min-width:0}.cost-report-date-fields .co-btn{width:100%}.co-custom-comparison{grid-template-columns:minmax(0,1fr)}.cost-comparison-controls>.cost-period-field{justify-content:space-between}}
+@media(max-width:600px){.cost-report-period-fields{flex-basis:100%}.cost-report-period-fields>.cost-report-year,.cost-report-period-fields>.cost-report-quarter,.cost-report-period-fields>.cost-report-half{flex:1 1 120px}.cost-report-period-fields>.cost-report-type{flex-basis:100%}.cost-report-period-fields input{width:100%}.cost-report-period-preview .cost-report-sync-note{flex-basis:100%;margin-left:0}}
+
+/* Overview summarizes the same expense categories as the detailed reports. */
+.cost-categories-chart>figcaption,.cost-branch-chart>figcaption{flex-wrap:wrap}
+.cost-categories-chart>figcaption>div:not(.cost-overview-actions),.cost-branch-chart>figcaption>div:not(.cost-overview-actions){flex:1 1 200px;min-width:0}
+.cost-overview-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-left:auto}
+body.financial-overview-only .cost-overview-view{height:34px;min-height:34px;padding:0 10px;border-radius:10px;font-size:var(--dashboard-control-size);color:var(--dashboard-green);white-space:nowrap}
+.cost-overview-view svg{width:14px;height:14px;flex:none}
+.cost-category-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cost-category-summary{--cost-category-color:#2f6498;min-width:0;padding:14px;border:1px solid var(--dashboard-line);border-radius:14px;background:var(--dashboard-surface)}
+.cost-category-summary[data-expense-category="regularCapital"]{--cost-category-color:#70509d}
+.cost-category-summary[data-expense-category="expansionOperating"]{--cost-category-color:#357a4c}
+.cost-category-summary[data-expense-category="expansionCapital"]{--cost-category-color:#916018}
+.cost-category-summary>span{display:block;min-height:36px;color:var(--dashboard-muted);font-size:var(--dashboard-control-size);line-height:1.5}
+.cost-category-summary>strong{display:inline-block;max-width:100%;margin:8px 0 12px;color:var(--cost-category-color);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-semibold);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cost-category-share{display:grid;gap:7px}
+.cost-category-share>div{height:5px;overflow:hidden;border-radius:5px;background:#eef3f0}
+.cost-category-share i{display:block;height:100%;border-radius:inherit;background:var(--cost-category-color)}
+.cost-category-share small{color:var(--dashboard-muted);font-size:var(--dashboard-pagination-size)}
+.cost-comparison-key{flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.cost-comparison-key>span{align-items:center;border-radius:12px;padding:8px 10px}
+.cost-comparison-key>span>span{display:grid;gap:4px;font-size:var(--dashboard-control-size)}
+.cost-comparison-key small{color:var(--dashboard-muted);font-size:var(--dashboard-pagination-size);line-height:1.5}
+.cost-bar-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:9px}
+.cost-bar-heading>strong{min-width:0;color:var(--dashboard-ink);font-size:var(--dashboard-control-size);font-weight:var(--dashboard-weight-medium);overflow-wrap:anywhere}
+.cost-branch-change{display:inline-flex;align-items:center;flex-wrap:wrap;gap:5px;padding:5px 8px;border:1px solid #e1e7e3;border-radius:8px;background:#f1f5f3;color:#62746a;font-size:var(--dashboard-pagination-size);font-weight:var(--dashboard-weight-medium);font-variant-numeric:tabular-nums}
+.cost-branch-change small{padding-left:6px;border-left:1px solid currentColor;font-size:inherit;font-weight:var(--dashboard-weight-regular)}
+.cost-change-increase{border-color:#eedfc6;background:#fff8eb;color:#916018}
+.cost-change-decrease{border-color:#d4e7d9;background:#eff8f2;color:#287441}
+.cost-operating-metrics{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:20px 0 0;padding-top:16px;border-top:1px solid var(--dashboard-line)}
+.cost-operating-metrics>div{min-width:0;padding:12px;border:1px solid var(--dashboard-line);border-radius:12px;background:var(--dashboard-surface)}
+.cost-operating-metrics dt{margin:0 0 8px;color:var(--dashboard-muted);font-size:var(--dashboard-caption-size);line-height:1.5}
+.cost-operating-metrics dd{margin:0;color:var(--dashboard-ink);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-semibold);font-variant-numeric:tabular-nums}
+@media(max-width:1100px){.cost-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.cost-summary-grid{grid-template-columns:minmax(0,1fr)}.cost-overview-actions{margin-left:0}.cost-operating-metrics{grid-template-columns:minmax(0,1fr)}.cost-bar-line>span{min-width:75px}}
+@media(max-width:420px){.cost-category-grid{grid-template-columns:minmax(0,1fr)}.cost-category-summary>span{min-height:0}}

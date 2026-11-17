@@ -4,7 +4,7 @@ let setup=original.slice(0,original.indexOf('assert.equal(reference.length,18);'
 const initial="vm.createContext(context);for(const file of ['targets-people.js','dashboard-targets.js','dashboard-report-charts.js','targets-alerts.js'])vm.runInContext(fs.readFileSync(file,'utf8'),context,{filename:file});";
 setup=setup.replace(initial,"vm.createContext(context);for(const file of ['targets-people.js','dashboard-targets.js','dashboard-report-charts.js','targets-alerts-sample.js','targets-alerts.js']){vm.runInContext(fs.readFileSync(file,'utf8'),context,{filename:file});if(file==='targets-people.js')context.window.targetReferencePeople=Object.freeze([...context.window.targetReferencePeople,...['accountManager','salesRep'].map(scope=>Object.freeze({id:'NEW-'+scope,name:'New '+scope,scope,branch:'Not provided',source:'reference',sourceId:null}))]);}");
 const verify=String.raw`
-const newPeople=[['pro',reference[0].id],['accountManager','NEW-accountManager'],['salesRep','NEW-salesRep']];
+const newPeople=[['pro',reference[6].id],['accountManager','NEW-accountManager'],['salesRep','NEW-salesRep']];
 const chooseMetric=value=>{ids.get('targetMetric').value=value;fire('targetMetric','change',{});allScopes();};
 for(const selectedMetric of ['revenue','tests']){
  chooseMetric(selectedMetric);
@@ -26,7 +26,7 @@ for(const selectedMetric of ['revenue','tests']){
  }
 }
 // A matched source can supply genuine zero activity for new people in all three scopes.
-saved.set(data.snapshotKey,JSON.stringify({from:'2026-11-01',to:'2026-11-16',actuals:{[reference[0].id]:0},testActuals:{[reference[0].id]:0},scopeActuals:{accountManager:{'NEW-accountManager':0},salesRep:{'NEW-salesRep':0}},scopeTestActuals:{accountManager:{'NEW-accountManager':0},salesRep:{'NEW-salesRep':0}},scope:'Confirmed zero activity'}));
+saved.set(data.snapshotKey,JSON.stringify({from:'2026-11-01',to:'2026-11-16',actuals:{[reference[6].id]:0},testActuals:{[reference[6].id]:0},scopeActuals:{accountManager:{'NEW-accountManager':0},salesRep:{'NEW-salesRep':0}},scopeTestActuals:{accountManager:{'NEW-accountManager':0},salesRep:{'NEW-salesRep':0}},scope:'Confirmed zero activity'}));
 for(const selectedMetric of ['revenue','tests']){
  chooseMetric(selectedMetric);
  for(const [scope,id]of newPeople){assert(save(scope,id,'100'));assert.equal(get(id,scope).actual,0);assert.equal(get(id,scope).difference,-100);assert.equal(get(id,scope).status,'Shortfall');assert(save(scope,id,'0'));assert.equal(get(id,scope).status,'Target met');assert.equal(get(id,scope).achievement,100);}
@@ -38,7 +38,7 @@ for(const selectedMetric of ['revenue','tests']){
  chooseMetric(selectedMetric);
  for(const [scope,id]of existing){allScopes();const row=get(id,scope),history=[row.previousTarget,row.previousActual,row.previousDifference,row.previousStatus],before=JSON.stringify(data.getSnapshot());assert(save(scope,id,selectedMetric==='tests'?'12':'1500'));const updated=get(id,scope);assert.equal(updated.actual,selectedMetric==='tests'?10:1000);assert.equal(updated.difference,selectedMetric==='tests'?-2:-500);assert.equal(updated.status,'Shortfall');assert.deepEqual([updated.previousTarget,updated.previousActual,updated.previousDifference,updated.previousStatus],history);assert.equal(JSON.stringify(data.getSnapshot()),before);}
 }
-chooseMetric('revenue');assert(save('pro',reference[0].id,'1000'));api.exportCsv();const blob=payload;
-return (async()=>{const csv=await blob.text(),parse=line=>[...line.matchAll(/"((?:[^"]|"")*)"/g)].map(match=>match[1]),lines=csv.split('\r\n'),header=parse(lines[0]),row=lines.map(parse).find(row=>row[1]===reference[0].id);assert.equal(row[header.indexOf('Actual net revenue')],'');assert.equal(row[header.indexOf('Difference')],'');assert.equal(row[header.indexOf('Status')],'Awaiting activity');assert.equal(row[header.indexOf('Actual revenue source')],'Unavailable');assert.equal(row[header.indexOf('Previous net revenue')],'');console.log('PASS: new PRO/manager/sales rep targets show Awaiting activity with no generated actuals or history; both metrics, saved zero versus confirmed zero activity, neutral status and KPI alerts, omitted unknown chart points, empty CSV inputs with clear status, and preserved existing actuals/history after saving.');})();
+chooseMetric('revenue');assert(save('pro',reference[6].id,'1000'));api.exportCsv();const blob=payload;
+return (async()=>{const csv=await blob.text(),parse=line=>[...line.matchAll(/"((?:[^"]|"")*)"/g)].map(match=>match[1]),lines=csv.split('\r\n'),header=parse(lines[0]),row=lines.map(parse).find(row=>row[1]===reference[6].id);assert.equal(row[header.indexOf('Actual net revenue')],'');assert.equal(row[header.indexOf('Difference')],'');assert.equal(row[header.indexOf('Status')],'Awaiting activity');assert.equal(row[header.indexOf('Actual revenue source')],'Unavailable');assert.equal(row[header.indexOf('Previous net revenue')],'');console.log('PASS: new PRO/manager/sales rep targets show Awaiting activity with no generated actuals or history; both metrics, saved zero versus confirmed zero activity, neutral status and KPI alerts, omitted unknown chart points, empty CSV inputs with clear status, and preserved existing actuals/history after saving.');})();
 `;
 new Function('require',setup+verify)(require).catch(error=>{console.error(error);process.exitCode=1;});

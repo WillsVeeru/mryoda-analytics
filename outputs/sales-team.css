@@ -3,12 +3,7 @@
 .sales-team-page .sales-group-title{margin:0;color:var(--dashboard-ink);font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium)}
 .sales-team-page .sales-section-title{margin:0 0 14px}
 .sales-team-page .sales-section-title h2{margin:0;font-size:var(--dashboard-report-title-size);font-weight:var(--dashboard-weight-medium)}
-.sales-team-page .sales-breadcrumb{padding:8px 10px;margin:0 0 18px;border:1px solid #dce8e0;border-radius:14px;background:#f1f7f3}
-.sales-team-page .sales-breadcrumb li{max-width:100%}
-.sales-team-page .sales-breadcrumb button{padding:5px 8px;border-radius:8px;overflow-wrap:anywhere;text-decoration:none}
-.sales-team-page .sales-breadcrumb button:hover{background:#fff;color:#216b39;text-decoration:underline;text-underline-offset:3px}
-.sales-team-page .sales-breadcrumb [aria-current]{padding:5px 10px;border-radius:8px;background:#e1eee6;color:#244e38;overflow-wrap:anywhere}
-.sales-team-page .sales-breadcrumb svg{width:14px;height:14px;color:#91a99a}
+.sales-team-page .sales-report-content>.doctors-report-head>.dashboard-summary-info{flex:1 1 300px;min-width:0;margin-bottom:0}
 .sales-team-page .sales-layout-toolbar{margin-bottom:20px}
 .sales-team-page .revenue-report-view-controls{margin-left:auto;flex-shrink:0}
 .sales-team-page .sales-drill-link{display:inline-flex;align-items:flex-start;gap:8px;padding:3px 0;border:0;background:transparent;color:#276a47;font:inherit;text-align:left;cursor:pointer}

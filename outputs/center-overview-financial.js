@@ -50,6 +50,12 @@ let financialTrail = [];
 let financialBranchPath = 'client';
 let financialCostPeriod = 1;
 let financialCustomComparison = null;
+let financialCostCalendarPeriods = {};
+let financialCostReportSelection = null;
+let financialExpenseView = 'overview';
+let financialExpenseBranch = '';
+let financialPivotRows = 'branch';
+let financialPivotMeasure = 'amount';
 let financialCostComparisonSummary = null;
 const financialTablePageStates = new Map();
 const financialTableControllers = new WeakMap();
@@ -409,15 +415,16 @@ function financialToneClass(header) {
   return '';
 }
 
-function financialCells(row, tag, headers) {
+function financialCells(row, tag, headers, columnTones = []) {
   return row.map((value, index) => {
-    const tone = financialToneClass(headers[index]);
-    return '<' + tag + (tone ? ' class="' + tone + '"' : '') + '>' + value + '</' + tag + '>';
+    const explicitTone=columnTones[index],validTone=['neutral','inflow','deduction','cost','result','benchmark'].includes(explicitTone);
+    const tone=validTone?(explicitTone==='neutral'?'':'financial-tone-'+explicitTone):financialToneClass(headers[index]);
+    return '<' + tag + (tone ? ' class="' + tone + '"' : '') + (tag==='th'&&validTone?' data-column-tone="'+explicitTone+'"':'') + '>' + value + '</' + tag + '>';
   }).join('');
 }
 
-function financialTable(headers, rows, total) {
-  const cells = (row, tag) => financialCells(row, tag, headers);
+function financialTable(headers, rows, total, options = {}) {
+  const cells = (row, tag) => financialCells(row, tag, headers, options.columnTones);
   return '<div class="co-table-wrap"><table class="co-table co-financial-table"><thead><tr>' + cells(headers,'th') +
     '</tr></thead><tbody>' + (rows.map(row => '<tr>' + cells(row,'td') + '</tr>').join('') ||
     '<tr><td class="co-empty" colspan="' + headers.length + '">No records match this scope.</td></tr>') +
@@ -679,11 +686,163 @@ function financialPeriodCenters(period) {
   const selected = new Set(currentCenterRows.map(row => row.id));
   return (aggregateCenters(period.start, period.end) || []).filter(row => selected.has(row.id));
 }
-let financialExpenseView = 'overview';
-let financialExpenseBranch = '';
-let financialPivotRows = 'branch';
-let financialPivotMeasure = 'amount';
-
+function financialCostReportPeriod() {
+  const start=co('coFrom').value,end=co('coTo').value;
+  return financialValidComparisonDate(start)&&financialValidComparisonDate(end)&&start<=end?{start,end}:null;
+}
+function financialPreviousRange(period) {
+  if(!period)return null;
+  const days=Math.round((new Date(period.end+'T00:00:00Z')-new Date(period.start+'T00:00:00Z'))/86400000)+1;
+  const end=new Date(period.start+'T00:00:00Z');end.setUTCDate(end.getUTCDate()-1);
+  const start=new Date(end);start.setUTCDate(start.getUTCDate()-days+1);
+  return{start:start.toISOString().slice(0,10),end:end.toISOString().slice(0,10)};
+}
+function financialCostCalendarState() {
+  const months=Number(financialCostPeriod);
+  if(![1,3,6,12].includes(months))return null;
+  if(!financialCostCalendarPeriods[months]){
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    const anchor=financialValidComparisonDate(co('coTo').value)?co('coTo').value:today;
+    const year=Number(anchor.slice(0,4)),month=Math.floor((Number(anchor.slice(5,7))-1)/months)*months;
+    const before=new Date(Date.UTC(year,month-months,1));
+    financialCostCalendarPeriods[months]={currentYear:year,currentSlot:month/months+1,previousYear:before.getUTCFullYear(),previousSlot:before.getUTCMonth()/months+1};
+  }
+  return financialCostCalendarPeriods[months];
+}
+function financialCostComparisonPeriod(previous=false) {
+  if(financialCostPeriod==='custom')return financialPeriod('custom',previous);
+  const months=Number(financialCostPeriod),selection=financialCostCalendarState(),prefix=previous?'previous':'current';
+  if(!selection)return null;
+  const year=selection[prefix+'Year'],slot=selection[prefix+'Slot'];
+  if(!Number.isInteger(year)||year<1900||year>9999||!Number.isInteger(slot)||slot<1||slot>12/months)return null;
+  const month=(slot-1)*months;
+  return{start:new Date(Date.UTC(year,month,1)).toISOString().slice(0,10),end:new Date(Date.UTC(year,month+months,0)).toISOString().slice(0,10)};
+}
+function financialCostActivePeriod(previous=false) {
+  if(financialExpenseView==='comparison')return financialCostComparisonPeriod(previous);
+  const report=financialCostReportPeriod();
+  return previous?financialPreviousRange(report):report;
+}
+function financialCostReportToday() {
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+}
+function financialCostReportState() {
+  const globalPeriod=financialCostReportPeriod(),key=co('coFrom').value+'|'+co('coTo').value;
+  if(!financialCostReportSelection||financialCostReportSelection.syncedKey!==key){
+    const initial=!financialCostReportSelection;
+    const anchor=initial?financialCostReportToday():(globalPeriod?.end||financialCostReportToday());
+    const year=Number(anchor.slice(0,4)),month=Number(anchor.slice(5,7));
+    const state={type:'custom',year,month,quarter:Math.ceil(month/3),half:Math.ceil(month/6),
+      customFrom:initial?anchor:co('coFrom').value,customTo:initial?anchor:co('coTo').value,syncedKey:key};
+    if(!initial&&globalPeriod){
+      const types=[['monthly',1],['quarterly',3],['half-yearly',6],['yearly',12]];
+      for(const [type,months] of types){
+        const slot=Math.floor((month-1)/months),start=new Date(Date.UTC(year,slot*months,1)).toISOString().slice(0,10),end=new Date(Date.UTC(year,slot*months+months,0)).toISOString().slice(0,10);
+        if(globalPeriod.start===start&&globalPeriod.end===end){state.type=type;break;}
+      }
+    }
+    financialCostReportSelection=state;
+  }
+  return financialCostReportSelection;
+}
+function financialCostReportDraftPeriod() {
+  const state=financialCostReportState();
+  if(state.type==='custom')return financialValidComparisonDate(state.customFrom)&&financialValidComparisonDate(state.customTo)&&state.customFrom<=state.customTo?{start:state.customFrom,end:state.customTo}:null;
+  const months={'monthly':1,'quarterly':3,'half-yearly':6,'yearly':12}[state.type];
+  const slot=state.type==='monthly'?state.month:state.type==='quarterly'?state.quarter:state.type==='half-yearly'?state.half:1;
+  if(!months||!Number.isInteger(state.year)||state.year<1900||state.year>9999||!Number.isInteger(slot)||slot<1||slot>12/months)return null;
+  return{start:new Date(Date.UTC(state.year,(slot-1)*months,1)).toISOString().slice(0,10),end:new Date(Date.UTC(state.year,slot*months,0)).toISOString().slice(0,10)};
+}
+function financialCostReportRangeLabel(period) {
+  if(!period)return 'Choose a valid period';
+  const date=value=>new Date(value+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+  return date(period.start)+(period.start===period.end?'':' \u2013 '+date(period.end));
+}
+function updateFinancialCostReportPreview() {
+  const draft=financialCostReportDraftPeriod(),applied=financialCostReportPeriod();
+  co('financialCostReportRange').textContent=financialCostReportRangeLabel(draft);
+  co('financialCostReportPending').hidden=!!draft&&!!applied&&draft.start===applied.start&&draft.end===applied.end;
+  co('financialCostReportError').textContent='';
+}
+function refreshFinancialCostReportControls(focusId) {
+  const controls=co('financialCostReportType')?.closest?.('.cost-report-dates');
+  if(!controls){renderFinancialModule();return;}
+  controls.outerHTML=financialCostReportControls();
+  requestAnimationFrame(()=>{
+    const select=co(focusId),trigger=select?.nextElementSibling;
+    (trigger?.classList.contains('financial-select-trigger')?trigger:select)?.focus();
+  });
+}
+function setFinancialCostReportPeriodType(value) {
+  if(!['monthly','quarterly','half-yearly','yearly','custom'].includes(value))return;
+  const state=financialCostReportState(),draft=financialCostReportDraftPeriod();
+  if(value==='custom'&&state.type!=='custom'&&draft){state.customFrom=draft.start;state.customTo=draft.end;}
+  state.type=value;
+  refreshFinancialCostReportControls('financialCostReportType');
+}
+function setFinancialCostReportPeriodField(field,value) {
+  const state=financialCostReportState();
+  if(['customFrom','customTo'].includes(field)){state[field]=value;updateFinancialCostReportPreview();return;}
+  const limits={year:[1900,9999],month:[1,12],quarter:[1,4],half:[1,2]},number=Number(value);
+  if(!limits[field]||!Number.isInteger(number)||number<limits[field][0]||number>limits[field][1])return;
+  state[field]=number;
+  refreshFinancialCostReportControls('financialCostReport'+field[0].toUpperCase()+field.slice(1));
+}
+function applyFinancialCostReportDates() {
+  const state=financialCostReportState();
+  if(state.type==='custom'){
+    state.customFrom=co('financialCostReportFrom').value;
+    state.customTo=co('financialCostReportTo').value;
+  }
+  const period=financialCostReportDraftPeriod();
+  co('financialCostReportError').textContent=period?'':state.type==='custom'?'Choose valid report dates. From must be on or before To.':'Choose a valid report period.';
+  if(!period)return false;
+  co('coFrom').value=period.start;co('coTo').value=period.end;
+  state.syncedKey=period.start+'|'+period.end;
+  document.querySelectorAll('.co-period button').forEach(button=>button.classList.remove('active'));
+  renderCenterOverview();
+  return true;
+}
+function financialCostReportControls() {
+  const state=financialCostReportState(),draft=financialCostReportDraftPeriod(),applied=financialCostReportPeriod();
+  const options=(values,selected)=>values.map(([value,label])=>'<option value="'+value+'"'+(value===selected?' selected':'')+'>'+centerEscape(label)+'</option>').join('');
+  const select=(field,label,values)=>'<label class="cost-report-'+field+'">'+label+'<select id="financialCostReport'+field[0].toUpperCase()+field.slice(1)+'" aria-label="Report '+label.toLowerCase()+'" onchange="setFinancialCostReportPeriodField(\''+field+'\',this.value)">'+options(values,state[field])+'</select></label>';
+  let fields='';
+  if(state.type==='custom')fields='<label>From<input type="date" id="financialCostReportFrom" aria-label="Report dates From" value="'+centerEscape(state.customFrom)+'" onchange="setFinancialCostReportPeriodField(\'customFrom\',this.value)"></label>'+
+    '<label>To<input type="date" id="financialCostReportTo" aria-label="Report dates To" value="'+centerEscape(state.customTo)+'" onchange="setFinancialCostReportPeriodField(\'customTo\',this.value)"></label>';
+  else{
+    const todayYear=Number(financialCostReportToday().slice(0,4)),lower=Math.max(1900,Math.min(todayYear-10,state.year)),upper=Math.min(9999,Math.max(todayYear+5,state.year));
+    fields=select('year','Year',Array.from({length:upper-lower+1},(_,index)=>[lower+index,String(lower+index)]));
+    if(state.type==='monthly')fields+=select('month','Month',Array.from({length:12},(_,index)=>[index+1,new Date(Date.UTC(2026,index,1)).toLocaleDateString('en-GB',{month:'long',timeZone:'UTC'})]));
+    if(state.type==='quarterly')fields+=select('quarter','Quarter',[[1,'Q1 \u00b7 Jan\u2013Mar'],[2,'Q2 \u00b7 Apr\u2013Jun'],[3,'Q3 \u00b7 Jul\u2013Sep'],[4,'Q4 \u00b7 Oct\u2013Dec']]);
+    if(state.type==='half-yearly')fields+=select('half','Half-year',[[1,'H1 \u00b7 Jan\u2013Jun'],[2,'H2 \u00b7 Jul\u2013Dec']]);
+  }
+  const pending=!draft||!applied||draft.start!==applied.start||draft.end!==applied.end;
+  return '<div class="cost-report-dates" role="group" aria-labelledby="financialCostDatesLabel"><div class="cost-filter-caption"><span id="financialCostDatesLabel">Report dates</span><p>Overview, Pivot &amp; By Branch</p></div><div class="cost-report-date-fields cost-report-period-fields">'+
+    '<label class="cost-report-type">Report period<select id="financialCostReportType" aria-label="Report period" onchange="setFinancialCostReportPeriodType(this.value)">'+options([['monthly','Monthly'],['quarterly','Quarterly'],['half-yearly','Half-yearly'],['yearly','Yearly'],['custom','Custom dates']],state.type)+'</select></label>'+fields+
+    '<button type="button" class="co-btn" aria-describedby="financialCostReportRange" onclick="applyFinancialCostReportDates()">Apply period</button></div>'+
+    '<div class="cost-report-period-preview"><span>Selected dates</span><output id="financialCostReportRange" aria-live="polite">'+centerEscape(financialCostReportRangeLabel(draft))+'</output><span class="cost-report-pending" id="financialCostReportPending"'+(pending?'':' hidden')+'>Not applied</span><span class="cost-report-sync-note">Updates the global date filter on Apply.</span></div><p id="financialCostReportError" role="alert"></p></div>';
+}
+function financialCostComparisonControls() {
+  const type='<label class="cost-period-field"><span>Compare periods</span><select id="financialCostPeriodSelect" onchange="setFinancialCostPeriod(this.value)">'+
+    [[1,'Monthly'],[3,'Quarterly'],[6,'Half-yearly'],[12,'Yearly'],['custom','Custom dates']].map(([value,label])=>'<option value="'+value+'"'+(value===financialCostPeriod?' selected':'')+'>'+label+'</option>').join('')+'</select></label>';
+  if(financialCostPeriod==='custom')return '<div class="cost-comparison-controls">'+type+financialCustomComparisonControls()+'</div>';
+  const months=Number(financialCostPeriod),selection=financialCostCalendarState(),anchorYear=Number(co('coTo').value.slice(0,4))||selection.currentYear;
+  const lower=Math.max(1900,Math.min(anchorYear-10,selection.currentYear,selection.previousYear)),upper=Math.min(9999,Math.max(anchorYear+5,selection.currentYear,selection.previousYear));
+  const years=Array.from({length:Math.min(upper-lower+1,8100)},(_,index)=>lower+index);
+  const options=months===1?Array.from({length:12},(_,index)=>[index+1,new Date(Date.UTC(2026,index,1)).toLocaleDateString('en-GB',{month:'long',timeZone:'UTC'})]):
+    months===3?[[1,'Q1 · Jan–Mar'],[2,'Q2 · Apr–Jun'],[3,'Q3 · Jul–Sep'],[4,'Q4 · Oct–Dec']]:[[1,'H1 · Jan–Jun'],[2,'H2 · Jul–Dec']];
+  const panels=[['current','Current period'],['previous','Compare with']].map(([key,label])=>'<fieldset><legend>'+label+'</legend><label>Year<select id="financialCost-'+key+'Year" aria-label="'+label+' year" onchange="setFinancialCostCalendarPeriod(\''+key+'Year\',this.value)">'+years.map(year=>'<option value="'+year+'"'+(year===selection[key+'Year']?' selected':'')+'>'+year+'</option>').join('')+'</select></label>'+
+    (months===12?'':'<label>'+(months===1?'Month':months===3?'Quarter':'Half-year')+'<select id="financialCost-'+key+'Slot" aria-label="'+label+' '+(months===1?'month':months===3?'quarter':'half-year')+'" onchange="setFinancialCostCalendarPeriod(\''+key+'Slot\',this.value)">'+options.map(([value,text])=>'<option value="'+value+'"'+(value===selection[key+'Slot']?' selected':'')+'>'+text+'</option>').join('')+'</select></label>')+'</fieldset>').join('');
+  return '<div class="cost-comparison-controls">'+type+'<div class="co-custom-comparison cost-calendar-comparison">'+panels+'</div><p class="co-sales-source-note">These periods apply only to Period Comparison. Calendar quarters start in January.</p></div>';
+}
+function setFinancialCostCalendarPeriod(field,value) {
+  const selection=financialCostCalendarState(),number=Number(value);
+  if(!selection||!['currentYear','previousYear','currentSlot','previousSlot'].includes(field)||!Number.isInteger(number))return;
+  if(field.endsWith('Year')?(number<1900||number>9999):(number<1||number>12/Number(financialCostPeriod)))return;
+  selection[field]=number;
+  renderFinancialModule();
+}
 function setFinancialPivot(field, value) {
   if (field === 'rows') financialPivotRows = value === 'category' ? 'category' : 'branch';
   if (field === 'measure') financialPivotMeasure = value === 'share' ? 'share' : 'amount';
@@ -733,7 +892,8 @@ function financialCostPivot(branches) {
 }
 
 function exportFinancialCostPivot() {
-  const period = financialPeriod(financialCostPeriod);
+  const period = financialCostReportPeriod();
+  if(!period)return;
   const branches = financialPeriodCenters(period);
   const data = financialCostPivotData(branches);
   const total = data.total[data.total.length - 1];
@@ -783,7 +943,7 @@ function financialCostTrend(period) {
   const points = [];
   const start = new Date(period.start + 'T00:00:00Z');
   const end = new Date(period.end + 'T00:00:00Z');
-  const monthly = financialCostPeriod === 'custom' ? (end-start)/86400000 >= 45 : financialCostPeriod > 1;
+  const monthly = (end-start)/86400000 >= 45;
   for (let date = new Date(start); date <= end;) {
     const from = date.toISOString().slice(0, 10);
     const to = monthly ? [new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).toISOString().slice(0, 10),period.end].sort()[0] : from;
@@ -793,7 +953,7 @@ function financialCostTrend(period) {
     else date.setUTCDate(date.getUTCDate() + 1);
   }
   const max = Math.max(1, ...points.map(point => point.amount));
-  const coords = points.map((point, index) => [40 + index * 520 / Math.max(1, points.length - 1), 150 - point.amount / max * 115]);
+  const coords = points.map((point, index) => [points.length === 1 ? 300 : 40 + index * 520 / (points.length - 1), 150 - point.amount / max * 115]);
   const line = coords.map(([x,y]) => x + ',' + y).join(' ');
   return '<figure class="cost-chart cost-trend-card"><figcaption><span class="cost-chart-icon">' + dashboardIcon('ChartArea') + '</span><div><h4>Spending trend</h4><p>' + (monthly ? 'Monthly' : 'Daily') + ' operating expenses</p></div></figcaption>' +
     '<svg class="cost-trend" viewBox="0 0 600 200" role="group" aria-label="' + (monthly ? 'Monthly' : 'Daily') + ' spending trend">' +
@@ -801,54 +961,94 @@ function financialCostTrend(period) {
     [35,92,150].map(y => '<path d="M40 ' + y + 'H560" stroke="#e9efeb" fill="none"/>').join('') +
     '<text x="40" y="20" fill="#809086" font-size="10">' + centerEscape(centerMoney(max)) + '</text>' +
     '<defs><linearGradient id="costTrendFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8c63ce" stop-opacity=".22"/><stop offset="100%" stop-color="#8c63ce" stop-opacity=".02"/></linearGradient></defs>' +
-    '<polygon points="40,150 ' + line + ' 560,150" fill="url(#costTrendFill)"/>' +
-    '<polyline points="' + line + '" fill="none" stroke="#8762ba" stroke-width="2.8" stroke-linejoin="round"/>' +
+    (points.length > 1 ? '<polygon points="40,150 ' + line + ' 560,150" fill="url(#costTrendFill)"/>' +
+    '<polyline points="' + line + '" fill="none" stroke="#8762ba" stroke-width="2.8" stroke-linejoin="round"/>' : '') +
     coords.map(([x,y], index) => '<circle cx="' + x + '" cy="' + y + '" r="3.5" fill="#8762ba" stroke="#fff" stroke-width="1.5"/>' +
       '<circle class="cost-trend-hit" cx="' + x + '" cy="' + y + '" r="9" fill="transparent"' +
       financialCostTooltip(points[index].label, [['Operating expenses',centerMoney(points[index].amount)]]) + '/>').join('') +
     [0,Math.floor((points.length-1)/2),points.length-1].filter((index,position,array) => array.indexOf(index) === position).map(index => '<text x="' + coords[index][0] + '" y="180" text-anchor="middle" fill="#809086" font-size="10">' + points[index].label + '</text>').join('') + '</svg></figure>';
 }
 
+function financialCostSummaryTotals(branches) {
+  return branches.reduce((total,branch) => {
+    const allocation = financialBranchExpenseAllocation(branch);
+    for (const key of Object.keys(total)) total[key] += allocation[key];
+    return total;
+  }, {total:0,regularOperating:0,regularCapital:0,expansionOperating:0,expansionCapital:0,salaries:0});
+}
+function financialCostSummaryCards(branches, previousBranches) {
+  if(!branches.length)return '';
+  const totals=financialCostSummaryTotals(branches),priorTotals=financialCostSummaryTotals(previousBranches);
+  const operating = totals.regularOperating + totals.expansionOperating;
+  const capital = totals.regularCapital + totals.expansionCapital;
+  const change = financialExpenseVariance(totals.total, priorTotals.total);
+  const signedMoney = value => (value > 0 ? '+' : value < 0 ? '\u2212' : '') + centerMoney(Math.abs(value));
+  const signedPercent = value => value === null ? 'No prior baseline' : (value > 0 ? '+' : value < 0 ? '\u2212' : '') + Math.abs(value).toFixed(1) + '%';
+  const cards = [
+    ['Total spend',centerMoney(totals.total),'Operating + capital expenses'],
+    ['Operating expenses',centerMoney(operating),'Regular + expansion operating expenses'],
+    ['Capital expenses',centerMoney(capital),'Regular + expansion capital expenses'],
+    ['Change vs prior equal-length period',signedMoney(change.amount),signedPercent(change.percentage) + ' \u00b7 total spend']
+  ];
+  const tones = ['rose','blue','violet',change.amount > 0 ? 'amber' : change.amount < 0 ? 'green' : 'neutral'];
+  const icons = ['Receipt','Banknote','Layers','RotateCcw'];
+  return '<div class="cost-summary-grid" data-cost-report-summary="true" role="group" aria-label="Cost Analysis summary for all selected branches">' + cards.map(([label,value,note],index) => '<article class="co-kpi cost-summary-card cost-tone-' + tones[index] + '"><div class="co-kpi-top"><span>' + label + '</span><span class="co-icon">' + dashboardIcon(icons[index]) + '</span></div><strong>' + value + '</strong><small>' + note + '</small></article>').join('') + '</div>';
+}
 function financialCostOverview(branches, previousBranches, current, previous) {
   if (!branches.length) return '<p class="co-empty">No branches match the selected location filters.</p>';
+  const summary=financialCostSummaryCards(branches,previousBranches),totals=financialCostSummaryTotals(branches);
   branches = financialOperatingExpenseBranches(branches);
   previousBranches = financialOperatingExpenseBranches(previousBranches);
-  const now = centerTotal(branches), before = centerTotal(previousBranches);
-  const change = now.expenditure - before.expenditure;
-  const pct = before.expenditure ? ((change / before.expenditure) * 100).toFixed(1) + '%' : null;
-  const salaryShare = now.expenditure ? now.salaries / now.expenditure * 100 : 0;
-  const cards = [
-    ['Total operating expenses',centerMoney(now.expenditure),'Regular + expansion operating expenses'],
-    ['Change vs previous period',(change > 0 ? '+' : change < 0 ? '−' : '') + centerMoney(Math.abs(change)),pct ? (change > 0 ? '+' : '') + pct + ' · operating expenses' : now.expenditure ? 'New operating spend; no previous baseline' : 'No operating spend in either period'],
-    ['Salary share',salaryShare.toFixed(1) + '%',centerMoney(now.salaries) + ' ÷ operating expenses'],
-    ['Average per branch',centerMoney(now.expenditure / branches.length),'Operating expenses ÷ ' + branches.length + ' selected branches']
-  ];
+  const operating=totals.regularOperating+totals.expansionOperating;
+  const signedMoney = value => (value > 0 ? '+' : value < 0 ? '\u2212' : '') + centerMoney(Math.abs(value));
+  const signedPercent = value => value === null ? 'No prior baseline' : (value > 0 ? '+' : value < 0 ? '\u2212' : '') + Math.abs(value).toFixed(1) + '%';
+  const periodLabel = period => {
+    const date = value => new Date(value + 'T00:00:00Z').toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+    return date(period.start) + (period.start === period.end ? '' : ' \u2013 ' + date(period.end));
+  };
+  const salaryShare = operating ? totals.salaries / operating * 100 : 0;
+  const categories = financialExpenseCategories.map(([key,label]) => {
+    const share = totals.total ? totals[key] / totals.total * 100 : 0;
+    return '<div class="cost-category-summary" data-expense-category="' + key + '">' +
+      '<span>' + centerEscape(label) + '</span><strong' + financialCostTooltip(label, [
+        ['Dates',periodLabel(current)],['Amount',centerMoney(totals[key])],['Share of total spend',totals.total ? share.toFixed(1) + '%' : 'Not applicable'],
+        ...(totals.total ? [['Calculation',centerMoney(totals[key]) + ' \u00f7 ' + centerMoney(totals.total) + ' \u00d7 100']] : [])
+      ]) + '>' + centerMoney(totals[key]) + '</strong><div class="cost-category-share"><div aria-hidden="true"><i style="width:' + share + '%"></i></div><small>' + (totals.total ? share.toFixed(1) + '% of total' : 'No spend') + '</small></div></div>';
+  }).join('');
   const max = Math.max(1, ...branches.map(branch => branch.expenditure), ...previousBranches.map(branch => branch.expenditure));
   const comparison = branches.slice().sort((a,b) => b.expenditure - a.expenditure).map(branch => {
     const prior = previousBranches.find(row => row.id === branch.id)?.expenditure || 0;
-    return '<div class="cost-bar-row"><strong>' + centerEscape(branch.name) + '</strong>' +
+    const variance = financialExpenseVariance(branch.expenditure,prior);
+    const direction = variance.amount > 0 ? '\u2191' : variance.amount < 0 ? '\u2193' : '\u2194';
+    return '<div class="cost-bar-row"><div class="cost-bar-heading"><strong>' + centerEscape(branch.name) + '</strong>' +
+      '<span class="cost-branch-change cost-change-' + variance.tone + '"' + financialCostTooltip(branch.name + ' \u00b7 ' + variance.status, [
+        ['Current operating expenses',centerMoney(branch.expenditure)],['Prior operating expenses',centerMoney(prior)],
+        ['Change',signedMoney(variance.amount)],['Change (%)',signedPercent(variance.percentage)],
+        ['Calculation',centerMoney(branch.expenditure) + ' \u2212 ' + centerMoney(prior)]
+      ]) + '><span aria-hidden="true">' + direction + '</span>' + signedMoney(variance.amount) + '<small>' + (variance.percentage === null ? 'New spend' : signedPercent(variance.percentage)) + '</small></span></div>' +
       [[branch.expenditure,'current'],[prior,'previous']].map(([amount,tone]) => {
         const period = tone === 'current' ? current : previous;
         return '<div class="cost-bar-line"' + financialCostTooltip(branch.name, [
-          ['Period',tone === 'current' ? 'Current period' : 'Previous period'],
-          ['Dates',period.start + ' to ' + period.end],['Expenses',centerMoney(amount)]
+          ['Period',tone === 'current' ? 'Report dates' : 'Prior equal-length range'],
+          ['Dates',period.start + ' to ' + period.end],['Operating expenses',centerMoney(amount)]
         ]) + '><div class="cost-bar-track"><i class="' + tone + '" style="width:' + (amount / max * 100) + '%"></i></div><span>' + centerMoney(amount) + '</span></div>';
       }).join('') + '</div>';
   }).join('');
-  const tones = ['rose', change > 0 ? 'amber' : change < 0 ? 'green' : 'neutral', 'blue', 'violet'];
-  const icons = ['Receipt','RotateCcw','Users','MapPin'];
-  return '<div class="cost-summary-grid">' + cards.map(([label,value,note],index) => '<article class="co-kpi cost-summary-card cost-tone-' + tones[index] + '"><div class="co-kpi-top"><span>' + label + '</span><span class="co-icon">' + dashboardIcon(icons[index]) + '</span></div><strong>' + value + '</strong><small>' + note + '</small></article>').join('') + '</div>' +
-    '<div class="cost-chart-grid"><figure class="cost-chart cost-branch-chart"><figcaption><span class="cost-chart-icon">' + dashboardIcon('ChartBar') + '</span><div><h4>Operating expenses by branch</h4><p>Current vs previous period · excludes capital expenditure</p></div></figcaption>' +
-    '<div class="cost-chart-key"><span><i></i>Current</span><span><i class="previous"></i>Previous</span></div>' + comparison + '</figure>' +
-    '<figure class="cost-chart cost-mix-chart"><figcaption><span class="cost-chart-icon">' + dashboardIcon('ChartPie') + '</span><div><h4>Expense mix</h4><p>Composition of operating expenses</p></div></figcaption>' +
+  const viewButton = (view,label) => '<button type="button" class="co-btn cost-overview-view" onclick="selectFinancialExpenseView(\'' + view + '\')">' + label + dashboardIcon('ChevronRight') + '</button>';
+  return summary +
+    '<figure class="cost-chart cost-categories-chart"><figcaption><span class="cost-chart-icon">' + dashboardIcon('Layers') + '</span><div><h4>Expense categories</h4><p>All four categories \u00b7 selected report dates</p></div><div class="cost-overview-actions">' + viewButton('pivot','View Pivot') + viewButton('comparison','Period Comparison') + '</div></figcaption><div class="cost-category-grid">' + categories + '</div></figure>' +
+    '<div class="cost-chart-grid"><figure class="cost-chart cost-branch-chart"><figcaption><span class="cost-chart-icon">' + dashboardIcon('ChartBar') + '</span><div><h4>Operating expenses by branch</h4><p>Current vs prior equal-length period \u00b7 excludes capital expenses</p></div><div class="cost-overview-actions">' + viewButton('branch','By Branch') + '</div></figcaption>' +
+    '<div class="cost-chart-key cost-comparison-key"><span><i></i><span>Report dates<small>' + centerEscape(periodLabel(current)) + '</small></span></span><span><i class="previous"></i><span>Prior equal-length range<small>' + centerEscape(periodLabel(previous)) + '</small></span></span></div>' + comparison + '</figure>' +
+    '<figure class="cost-chart cost-mix-chart"><figcaption><span class="cost-chart-icon">' + dashboardIcon('ChartPie') + '</span><div><h4>Operating expense mix</h4><p>Salary share and other operating expenses</p></div></figcaption>' +
     '<div class="cost-mix-layout"><div class="cost-donut" data-default-share="' + salaryShare.toFixed(1) + '%">' +
-    '<svg class="cost-donut-ring" viewBox="0 0 240 240" role="group" aria-label="Expense mix by category">' +
-    financialDonutSegment('Employee salaries',now.salaries,salaryShare,0,'#5289ba') +
-    financialDonutSegment('Other operating expenses',now.expenditure-now.salaries,now.expenditure ? 100-salaryShare : 0,salaryShare * 3.6,'#e4b568') +
+    '<svg class="cost-donut-ring" viewBox="0 0 240 240" role="group" aria-label="Operating expense mix">' +
+    financialDonutSegment('Employee salaries',totals.salaries,salaryShare,0,'#5289ba') +
+    financialDonutSegment('Other operating expenses',operating-totals.salaries,operating ? 100-salaryShare : 0,salaryShare * 3.6,'#e4b568') +
     '</svg><span><b>' + salaryShare.toFixed(1) + '%</b><small>Salaries</small></span></div>' +
-    '<div class="cost-mix-values"><p' + financialCostTooltip('Employee salaries', [['Amount',centerMoney(now.salaries)],['Share',salaryShare.toFixed(1) + '%']]) + '><i></i>Employee salaries<strong>' + centerMoney(now.salaries) + '</strong></p>' +
-    '<p' + financialCostTooltip('Other operating expenses', [['Amount',centerMoney(now.expenditure-now.salaries)],['Share',(now.expenditure ? 100-salaryShare : 0).toFixed(1) + '%']]) + '><i class="previous"></i>Other operating expenses<strong>' + centerMoney(now.expenditure-now.salaries) + '</strong></p></div></div></figure></div>' +
-    financialCostTrend(current) + '<p class="co-sales-source-note">Operating expenses include regular and expansion operating allocations, with salaries counted once. Both capital categories are excluded. Compared with ' + previous.start + ' to ' + previous.end + '. Pivot and By Branch show all four expense categories.</p>';
+    '<div class="cost-mix-values"><p' + financialCostTooltip('Employee salaries', [['Amount',centerMoney(totals.salaries)],['Share of operating expenses',salaryShare.toFixed(1) + '%']]) + '><i></i>Employee salaries<strong>' + centerMoney(totals.salaries) + '</strong></p>' +
+    '<p' + financialCostTooltip('Other operating expenses', [['Amount',centerMoney(operating-totals.salaries)],['Share of operating expenses',(operating ? 100-salaryShare : 0).toFixed(1) + '%']]) + '><i class="previous"></i>Other operating expenses<strong>' + centerMoney(operating-totals.salaries) + '</strong></p></div></div>' +
+    '<dl class="cost-operating-metrics"><div><dt>Average operating expenses per branch</dt><dd' + financialCostTooltip('Average operating expenses per branch', [['Calculation',centerMoney(operating) + ' \u00f7 ' + branches.length],['Average',centerMoney(operating / branches.length)]]) + '>' + centerMoney(operating / branches.length) + '</dd></div><div><dt>Selected branches</dt><dd>' + branches.length + '</dd></div></dl></figure></div>' +
+    financialCostTrend(current) + '<p class="co-sales-source-note">Total spend and the four-category summary match Pivot and By Branch for the report dates. Branch comparisons, salary share and the spending trend use operating expenses, with salaries counted once. Overview compares the prior equal-length range; Period Comparison has separate date selections.</p>';
 }
 
 function selectFinancialExpenseView(view) {
@@ -863,26 +1063,10 @@ function selectFinancialExpenseBranch(id) {
   co('financialExpenseToggle-' + id)?.focus();
 }
 
-const financialExpenseAllocationProfiles = {
-    hyderabad: [0.62, 0.18, 0.08],
-    bengaluru: [0.52, 0.16, 0.12],
-    chennai: [0.73, 0.12, 0.06],
-    mumbai: [0.58, 0.22, 0.07],
-    delhi: [0.65, 0.10, 0.10]
-};
+const financialExpenseAllocationProfiles = window.dashboardFinancialData.expenseProfiles;
 
 function financialBranchExpenseAllocation(branch) {
-  // Stable branch-specific demo mixes; distribute non-salary spend without changing totals.
-  const [operatingShare, capitalShare, expansionShare] = financialExpenseAllocationProfiles[branch.id] || [0.65, 0.15, 0.08];
-  const spend = Math.round(branch.expenditure);
-  const salaries = Math.round(branch.salaries);
-  const remaining = Math.max(0, spend - salaries);
-  const regularRunning = Math.round(remaining * operatingShare);
-  const regularCapital = Math.round(remaining * capitalShare);
-  const expansionOperating = Math.round(remaining * expansionShare);
-  const expansionCapital = remaining - regularRunning - regularCapital - expansionOperating;
-  return { salaries, regularRunning, regularOperating: salaries + regularRunning,
-    regularCapital, expansionOperating, expansionCapital, total: spend };
+  return window.dashboardFinancialData.expenseAllocation(branch);
 }
 
 function financialBranchExpenses(branches, total) {
@@ -937,7 +1121,7 @@ function financialExpenseVariance(current, previous) {
 
 function financialCostPeriodComparison(branches, previousBranches, current, previous) {
   const headers = ['Expense category', 'Current period<br><small>' + current.start + ' to ' + current.end + '</small>',
-    'Previous period<br><small>' + previous.start + ' to ' + previous.end + '</small>', 'Change Amount', 'Change (%)', 'Trend'];
+    'Compare with<br><small>' + previous.start + ' to ' + previous.end + '</small>', 'Change Amount', 'Change (%)', 'Trend'];
   if (!branches.length) return '<div class="cost-comparison-report">' + financialTable(headers, []) + '</div>';
   const allocations = branches.map(financialBranchExpenseAllocation);
   const priorAllocations = previousBranches.map(financialBranchExpenseAllocation);
@@ -950,7 +1134,7 @@ function financialCostPeriodComparison(branches, previousBranches, current, prev
       wrap(variance.percentage === null ? 'New spend' : signed(variance.percentage, value => value.toFixed(1) + '%')),
       '<span class="cost-variance-status ' + variance.tone + '">' + variance.status + '</span>'];
   };
-  return '<p class="co-sales-source-note">Four-category demo allocations match By Branch and Pivot. ' +
+  return '<p class="co-sales-source-note">Uses the same four expense categories as Pivot and By Branch, calculated for the comparison dates selected above. ' +
     'Change = current − previous; change % = change ÷ previous × 100. New spend means there is no previous-period baseline. ' +
     'An increase can reflect expansion or higher activity.</p>' +
     '<div class="cost-comparison-report">' +
@@ -960,31 +1144,29 @@ function financialCostPeriodComparison(branches, previousBranches, current, prev
 
 function financialCostAnalysis() {
   financialCostComparisonSummary = null;
-  const current = financialPeriod(financialCostPeriod);
-  const previous = financialPeriod(financialCostPeriod, true);
-  const controls = '<div class="cost-analysis-toolbar"><div class="cost-analysis-heading">' +
+  const comparing=financialExpenseView==='comparison',current=financialCostActivePeriod(),previous=financialCostActivePeriod(true);
+  const heading = '<div class="cost-analysis-heading">' +
     '<div class="cost-analysis-title"><span class="cost-analysis-mark">' + dashboardIcon('ChartColumn') + '</span>' +
     '<div><h3>Cost Analysis</h3><p>Explore branch expenditure and period performance.</p></div></div>' +
-    '<label class="cost-period-field"><span>Comparison period</span><select id="financialCostPeriodSelect" onchange="setFinancialCostPeriod(this.value)">' +
-    [[1,'Monthly'],[3,'Quarterly'],[6,'Half-yearly'],[12,'Yearly'],['custom','Custom Comparison']].map(([value,label]) => '<option value="' + value + '"' +
-      (value === financialCostPeriod ? ' selected' : '') + '>' + label + '</option>').join('') + '</select></label></div>' +
     '<div class="co-insight-tabs cost-view-switcher" role="group" aria-label="Cost analysis views">' +
     [['overview','Overview','ChartPie'], ['pivot','Pivot','Layers'], ['branch','By Branch','MapPin'], ['comparison','Period Comparison','ChartColumn']].map(([key,label,icon]) =>
       '<button type="button" data-cost-view="' + key + '" aria-pressed="' + (financialExpenseView === key) +
       '" onclick="selectFinancialExpenseView(\'' + key + '\')">' + dashboardIcon(icon) + '<span>' + label + '</span></button>').join('') + '</div></div>';
-  const customControls = financialCustomComparisonControls();
-  if (!current || !previous) return controls + customControls + '<p class="co-custom-comparison-error" role="status">Choose valid From and To dates for both periods. From must be on or before To.</p>';
+  const dateControls=comparing?financialCostComparisonControls():financialCostReportControls();
+  const toolbar = note => '<div class="cost-analysis-toolbar">' + heading + dateControls + note + '</div>';
+  if (!current || !previous) return toolbar('<p class="co-custom-comparison-error" role="status">'+(comparing?'Choose valid dates for Current period and Compare with.':'Choose valid report dates using From and To.')+' From must be on or before To.</p>');
   const branches = financialPeriodCenters(current),now = centerTotal(branches),previousBranches = financialPeriodCenters(previous);
-  financialCostComparisonSummary={current:branches.reduce((sum,branch)=>sum+branch.expenditure,0),previous:previousBranches.reduce((sum,branch)=>sum+branch.expenditure,0)};
-  const scopeNote = customControls + '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end +
+  if(comparing)financialCostComparisonSummary={current:branches.reduce((sum,branch)=>sum+branch.expenditure,0),previous:previousBranches.reduce((sum,branch)=>sum+branch.expenditure,0)};
+  const scopeNote = '<p class="co-sales-source-note cost-analysis-scope">'+(comparing?'Current period: ':'Report dates: ') + current.start + ' to ' + current.end +
+    (comparing?' · Compare with: '+previous.start+' to '+previous.end:' · Automatic equal-length baseline: '+previous.start+' to '+previous.end)+
     ' · Centre, City and Sales Zone filters apply. Branch expenses are not allocated to individual clients, doctors or test categories.</p>';
-  if (financialExpenseView === 'overview') return controls + scopeNote + financialCostOverview(branches, previousBranches, current, previous);
-  if (financialExpenseView === 'pivot') return controls + scopeNote + financialCostPivot(branches);
+  if (financialExpenseView === 'overview') return toolbar(scopeNote) + financialCostOverview(branches, previousBranches, current, previous);
+  if (financialExpenseView === 'pivot') return toolbar(scopeNote) + financialCostSummaryCards(branches,previousBranches) + financialCostPivot(branches);
   if (financialExpenseView === 'branch') {
-    return controls + customControls + '<p class="co-sales-source-note">Period ' + current.start + ' to ' + current.end + '</p>' +
+    return toolbar(scopeNote) + financialCostSummaryCards(branches,previousBranches) +
       financialBranchExpenses(branches, now);
   }
-  return controls + scopeNote + financialCostPeriodComparison(branches, previousBranches, current, previous);
+  return toolbar(scopeNote) + financialCostPeriodComparison(branches, previousBranches, current, previous);
 }
 function setFinancialCostPeriod(value) {
   if (value === 'custom' && !financialCustomComparison) {
@@ -1005,7 +1187,7 @@ function financialValidComparisonDate(value) {
 function financialCustomComparisonControls() {
   if (financialCostPeriod !== 'custom') return '';
   const dates = financialCustomComparison || {};
-  return '<div class="co-custom-comparison">'+[['current','Current period'],['previous','Comparison period']].map(([key,label])=>
+  return '<div class="co-custom-comparison">'+[['current','Current period'],['previous','Compare with']].map(([key,label])=>
     '<fieldset><legend>'+label+'</legend>'+[['From','From'],['To','To']].map(([suffix,caption])=>
       '<label>'+caption+'<input type="date" id="financialCustom-'+key+suffix+'" aria-label="'+label+' '+caption+'" value="'+centerEscape(dates[key+suffix]||'')+'" onchange="setFinancialCustomComparison(\''+key+suffix+'\',this.value)"></label>').join('')+'</fieldset>').join('')+'</div>';
 }
@@ -1121,7 +1303,7 @@ function renderFinancialModule() {
         const current = Math.round(row.revenue / 130);
         const previous = Math.round((priorRows.find(other => other.id === row.id)?.revenue || 0) / 130);
         return [centerEscape(row.name),centerNumber(current),centerNumber(previous),centerNumber(current-previous)];
-      }));
+      }), null, {columnTones:['neutral','inflow','benchmark','deduction']});
   } else {
     const branches = financialCashFlowRows();
     const totals = branches.reduce((sum, branch) => ({
@@ -1213,7 +1395,7 @@ function financialFormulaSections() {
   const countRecords = financialModule === 'Overall Revenue' ? financialVisibleGroups.flatMap(group=>group.records) : ledger;
   const activity = financialModule === 'Overall Revenue' && financialFormulaTotals ? financialFormulaTotals : financialTotals(ledger);
   const global = centerTotal(currentCenterRows);
-  const current = financialPeriod(financialCostPeriod), previous = financialPeriod(financialCostPeriod,true);
+  const current = financialCostActivePeriod(), previous = financialCostActivePeriod(true);
   const branches = financialPeriodCenters(current), priorBranches = financialPeriodCenters(previous);
   const allocations = branches.map(financialBranchExpenseAllocation), priorAllocations = priorBranches.map(financialBranchExpenseAllocation);
   const sum = (items,key) => items.reduce((total,row) => total + row[key],0);
@@ -1227,7 +1409,7 @@ function financialFormulaSections() {
   const tests = financialScopedRecords(centerSalesState.records).reduce((total,row) => total + row.tests,0);
   const change = financialExpenseVariance(operating,priorOperating);
   const revenueScope = financialModule === 'Overall Revenue' ? 'Values use the current revenue table, its filters and drill-down.' : 'Values use selected branches and the global date range; not the hidden revenue drill-down.';
-  const costScope = current && previous ? 'Current: ' + current.start + ' to ' + current.end + '; previous: ' + previous.start + ' to ' + previous.end + '. Centre, City and Sales Zone apply.' : 'Choose a valid reporting end date.';
+  const costScope = current && previous ? (financialExpenseView==='comparison'?'Current period: ':'Report dates: ') + current.start + ' to ' + current.end + (financialExpenseView==='comparison'?'; compare with: ':'; automatic equal-length baseline: ') + previous.start + ' to ' + previous.end + '. Centre, City and Sales Zone apply.' : 'Choose valid dates for the active Cost Analysis view.';
   return [
     {key:'summary',title:'Banner & KPI Cards',scope:'Selected branches and global From–To dates. Salaries are already included in recorded expenditure.',rows:[
       ['Net Revenue','Gross revenue − discounts',money(global.net),'Banner and branch summary.'],
@@ -1784,7 +1966,7 @@ function exportFinancialDataTable(controller) {
     if (capital) rows.push(['Capital expenditure (shown separately)',capital.querySelector('strong').textContent,
       capital.querySelector('p').textContent]);
   }
-  const range = controller.module === 'Cost Analysis' ? financialPeriod(financialCostPeriod) :
+  const range = controller.module === 'Cost Analysis' ? financialCostActivePeriod() :
     {start:co('coFrom').value,end:co('coTo').value};
   downloadCenterInsightCSV(controller.exportName, rows, range);
 }
@@ -1796,9 +1978,9 @@ function financialChartData(controller) {
   const types=columns.map((label,index)=>{
     if(index===0||/^(Type|PRO|Designation|Status|Credit Status|Basis|Notes)$/i.test(label))return 'text';
     const values=raw.map(row=>row[index]),numericValues=values.filter(value=>typeof financialSortValue(value)==='number'),numeric=numericValues.length>0;
-    if(!numeric&&!/tests|count|clients|patients|gross|net revenue|discount|cost|referral|margin|amount|spend|credit limit|outstanding|cash|target|current period|previous period/i.test(label))return 'text';
+    if(!numeric&&!/tests|count|clients|patients|gross|net revenue|discount|cost|referral|margin|amount|spend|credit limit|outstanding|cash|target|current period|previous period|compare with/i.test(label))return 'text';
     if(/%|share/i.test(label)||numericValues.length&&numericValues.every(v=>/%$/.test(v)))return 'percent';
-    return values.some(value=>value.includes('₹'))||/gross|net revenue|discount|cost|referral|margin|amount|spend|credit|outstanding|cash|target|current period|previous period/i.test(label)?'money':'number';
+    return values.some(value=>value.includes('₹'))||/gross|net revenue|discount|cost|referral|margin|amount|spend|credit|outstanding|cash|target|current period|previous period|compare with/i.test(label)?'money':'number';
   });
   const rows=raw.map(row=>row.map((value,index)=>{
     if(types[index]==='text')return value;
@@ -1877,7 +2059,7 @@ function financialTableSummaryData(controller) {
   const isRates=/^cost per test$/i.test(headers[1]||'');
   const isStock=headers.length===4&&/^change \(units\)$/i.test(headers[3]||'');
   const additive=index=>index>0&&!/avg|average|rate|per test|%|share|clients|pros|limit|status|action|review|type|^pro$/i.test(headers[index])&&
-    (/tests|gross|discount|revenue|cost|referral|margin|target|difference|expense|spend|amount|cash|consumption|stock used|change \(units\)|^(?:current|previous) period/i.test(headers[index])||isStock&&index<3);
+    (/tests|gross|discount|revenue|cost|referral|margin|target|difference|expense|spend|amount|cash|consumption|stock used|change \(units\)|^(?:(?:current|previous) period|compare with)/i.test(headers[index])||isStock&&index<3);
   if(!footer&&!isStatement&&!isRates)headers.forEach((_,index)=>{
     if(additive(index)){const value=sum(index);totals[index]=value===null?'—':moneyColumn(index)?financialAmount(value):centerNumber(value);}
   });
@@ -1893,19 +2075,19 @@ function financialTableSummaryData(controller) {
     add('Tests with CPT rates',centerNumber(rates.length));add('Lowest CPT rate',rates.length?financialAmount(Math.min(...rates)):'—');add('Highest CPT rate',rates.length?financialAmount(Math.max(...rates)):'—');
   }else if(controller.module==='Cost Analysis'&&typeof financialCostComparisonSummary!=='undefined'&&financialCostComparisonSummary){
     const {current,previous}=financialCostComparisonSummary,change=current-previous;
-    add('Total Spend',financialAmount(current));add('Previous Period',financialAmount(previous));
+    add('Total Spend',financialAmount(current));add(headers.some(label=>/^compare with/i.test(label))?'Compare with':'Previous Period',financialAmount(previous));
     add('Change Amount',(change>0?'+':'')+financialAmount(change));
     add('Change %',previous?((change>0?'+':'')+(change/previous*100).toFixed(1)+'%'):current?'New spend':'0.0%');
   }else if(controller.module==='Cost Analysis'&&headers[0]?.toLowerCase()==='expense category'&&headers.at(-1)?.toLowerCase()==='total spend'){
     metric(headers.length-1);
   }else{
     const preferred=/^cash received$/i.test(headers[1]||'')?['Cash Received','Cash Brought In','Cash Paid','Net Cash Movement']:
-      headers.some(label=>/^current period/i.test(label))?['Current period','Previous period','Change Amount','Change (%)']:
+      headers.some(label=>/^current period/i.test(label))?['Current period',headers.some(label=>/^compare with/i.test(label))?'Compare with':'Previous period','Change Amount','Change (%)']:
       headers.some(label=>/^total spend$/i.test(label))?['Total Spend']:
       headers.some(label=>/^consumption/i.test(label))?['Stock used value','Consumption (units)']:
       headers.some(label=>/^target$/i.test(label))?['Target','Net Revenue','Difference']:
       ['Net Revenue','Cost','Referral','Net Margin','Amount'];
-    for(const label of preferred)metric(headers.findIndex(header=>header.toLowerCase()===label.toLowerCase()||/^(?:current|previous) period$/i.test(label)&&header.toLowerCase().startsWith(label.toLowerCase())));
+    for(const label of preferred)metric(headers.findIndex(header=>header.toLowerCase()===label.toLowerCase()||/^(?:(?:current|previous) period|compare with)$/i.test(label)&&header.toLowerCase().startsWith(label.toLowerCase())));
     if(!metrics.length)headers.forEach((_,index)=>{if(additive(index))metric(index);});
   }
   return {headers,rows,totals,metrics:metrics.slice(0,4),isStatement,isRates,createFooter:!footer&&!isStatement&&!isRates&&headers.some((_,index)=>additive(index)),count:rows.length};
@@ -1927,7 +2109,8 @@ function refreshFinancialTableSummary(controller) {
   const model=financialTableSummaryData(controller),table=controller.table;
   if(model.createFooter){
     const footer=table.createTFoot();
-    footer.innerHTML='<tr>'+financialCells(model.totals.map((value,index)=>index===0?'All filtered total':value??''),'td',model.headers)+'</tr>';
+    const columnTones=Array.from(table.tHead?.rows[0]?.cells||[],cell=>cell.dataset?.columnTone||cell.getAttribute?.('data-column-tone'));
+    footer.innerHTML='<tr>'+financialCells(model.totals.map((value,index)=>index===0?'All filtered total':value??''),'td',model.headers,columnTones)+'</tr>';
   }
   const footer=table.tFoot?.rows[0];
   if(footer&&!model.isStatement){
@@ -1935,14 +2118,15 @@ function refreshFinancialTableSummary(controller) {
     footer.cells[0].removeAttribute?.('title');
   }
   if(controller.totalNote)controller.totalNote.textContent=model.isRates?'CPT rates are not additive':model.isStatement?'Statement result covers all filtered activity':'Total covers all filtered rows across every page';
-  controller.summaryHost.hidden=!!controller.isExpenseDetail;
-  if(controller.isExpenseDetail)return;
+  controller.summaryHost.hidden=!!controller.isExpenseDetail||!!controller.hasCostReportSummary;
+  if(controller.summaryHost.hidden)return;
   const title=financialSectionSummaryTitle(controller);
   controller.summaryHost.setAttribute('aria-label',title);
-  const html='<div class="financial-section-summary-heading"><h4>'+centerEscape(title)+'</h4><span>'+centerNumber(model.count)+' records</span></div><div class="financial-section-summary-grid">'+model.metrics.map(metric=>{
+  const compactInventory=controller.module==='Inventory'&&model.metrics.length===2;
+  const html='<div class="financial-section-summary-heading"><h4>'+centerEscape(title)+'</h4><span>'+centerNumber(model.count)+' records</span></div><div class="financial-section-summary-grid'+(compactInventory?' financial-inventory-summary-grid':'')+'">'+model.metrics.map(metric=>{
     const value=financialSortValue(metric.display),newSpend=metric.display==='New spend',note=newSpend?'No previous-period baseline':typeof value==='number'?/^unique clients$/i.test(metric.label)?'Distinct across filtered rows':/^difference$/i.test(metric.label)?'PROs with targets only':'All filtered rows':metric.display==='—'?'Not available for this scope':'Requires complete source inputs';
     const display=typeof value==='number'||newSpend?metric.display:'—';
-    return '<section class="revenue-kpi financial-section-summary-card"><span class="financial-section-summary-icon restored-kpi-icon" aria-hidden="true">'+dashboardIcon(/tests|rates/i.test(metric.label)?'FlaskConical':/clients/i.test(metric.label)?'Users':'Banknote')+'</span><h2>'+centerEscape(metric.label)+'</h2><strong>'+centerEscape(display)+'</strong><p>'+note+'</p></section>';
+    return '<section class="revenue-kpi financial-section-summary-card"><span class="financial-section-summary-icon restored-kpi-icon" aria-hidden="true">'+dashboardIcon(/tests|rates/i.test(metric.label)?'FlaskConical':/clients/i.test(metric.label)?'Users':'Banknote')+'</span><h2>'+centerEscape(metric.label)+'</h2><strong>'+centerEscape(display)+'</strong><p data-kpi-note>'+note+'</p></section>';
   }).join('')+'</div>';
   if(controller.summarySignature!==html){controller.summaryHost.innerHTML=html;controller.summarySignature=html;}
 }
@@ -1951,9 +2135,9 @@ function enhanceFinancialTables(root, contextTitle) {
   root = root || co(financialModule === 'Overall Revenue' ? 'financialRevenueModule' : 'financialOtherModule');
   if (!root) return;
   const filterScope = JSON.stringify([
-    co('coFrom').value, co('coTo').value, co('coCenter').value, co('coCity').value, co('coZone').value,
+    financialModule==='Cost Analysis'&&financialExpenseView==='comparison'?null:co('coFrom').value, financialModule==='Cost Analysis'&&financialExpenseView==='comparison'?null:co('coTo').value, co('coCenter').value, co('coCity').value, co('coZone').value,
     financialHeaderClientType, financialHeaderClient, financialView, financialTrail,co('financialReportSearch')?.type==='search'?co('financialReportSearch').value:'',
-    financialCostPeriod, financialCustomComparison, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
+    financialExpenseView==='comparison'?[financialCostPeriod,financialCustomComparison,financialCostCalendarPeriods]:null, financialPivotRows, financialPivotMeasure, financialPnlCptTreatment, cptUpload,
     Array.from(financialMultiFilters, ([id,values]) => [id, values ? [...values].sort() : 'all'])
   ]);
   const tables = Array.from(root.querySelectorAll('table.co-financial-table'));
@@ -2057,6 +2241,7 @@ function enhanceFinancialTables(root, contextTitle) {
       };
     }
     controller.state = state;
+    controller.hasCostReportSummary=financialModule==='Cost Analysis'&&(!!root.querySelector('[data-cost-report-summary]')||financialExpenseView!=='comparison'&&!!root.querySelector('.cost-analysis-toolbar'));
     controller.groups = financialTableRowGroups(Array.from(table.tBodies).flatMap(body => Array.from(body.rows)));
     mountFinancialSortHeaders(controller);
     controller.render();

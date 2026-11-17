@@ -52,15 +52,15 @@
   function emptyMessage(def){if(!available(def))return def.scope==='tiers'?'Select the report month to view this comparison.':'Select Report period to view this report.';if(def.id==='unassigned')return 'No clients without an account manager for the selected period.';if(def.missing)return def.missing;return 'No available records match this selection.';}
   function tierFilters(){return '<div class="revenue-report-tabs sales-tier-filters" role="group" aria-label="Client tier filters">'+['All','Tier 1','Tier 2','Tier 3','No business','Moved down'].map(label=>'<button type="button" data-sales-tier="'+label+'" aria-pressed="'+(tierFilter===label)+'">'+label+'</button>').join('')+'</div>';}
   function clientView(pro,report){
-    const def={id:'clients',title:'Clients · '+pro,columns:['Client ID','Client','Type','Bills','Tests','Patients','Revenue'],types:['id','text','text','number','number','number','money'],metric:6,expand:'client',pro,missing:'Client details are not available for this PRO.'};
+    const def={id:'clients',title:pro+' · Client-level breakdown',columns:['Client ID','Client','Type','Bills','Tests','Patients','Revenue'],types:['id','text','text','number','number','number','money'],metric:6,expand:'client',pro,missing:'Client details are not available for this PRO.'};
     return view('clients:'+pro,def,data.clients[pro]||[],report);
   }
   function categoryView(pro,client,report){
-    const def={id:'categories',title:client[1]+' · Test-category mix',columns:['Test category','Tests','Revenue'],types:['text','number','money'],metric:2,pro,missing:'A test-category breakdown is not available for this client.'};
+    const def={id:'categories',title:client[1]+' · Category-level breakdown',columns:['Test category','Tests','Revenue'],types:['text','number','money'],metric:2,pro,missing:'A test-category breakdown is not available for this client.'};
     return view('categories:'+pro+'::'+client[0],def,data.categories[pro+'::'+client[0]]||[],report);
   }
   function tierClientView(pro,report){
-    const def={id:'tierClients',scope:'tiers',title:'Client tiers · '+pro,columns:['Client','Type','Tier','Revenue','Previous tier','Previous revenue','Movement','Bills'],types:['text','text','badge','money','badge','money','badge','number'],metric:3,pro,missing:'Client-tier details are not available for this PRO.'};
+    const def={id:'tierClients',scope:'tiers',title:pro+' · Client-tier breakdown',columns:['Client','Type','Tier','Revenue','Previous tier','Previous revenue','Movement','Bills'],types:['text','text','badge','money','badge','money','badge','number'],metric:3,pro,missing:'Client-tier details are not available for this PRO.'};
     return view('tierClients:'+pro,def,data.tierClients[pro]||[],report);
   }
   function view(key,def,raw,report){
@@ -68,7 +68,10 @@
     const state=stateFor(key),rows=selectRows(key),pager=pagination(key,rows.length),period=periodFor(def);
     const caption=def.scope==='directory'?'Directory as of '+date(data.to):period?(def.scope==='tiers'?'Comparison period: ':'Selected period: ')+date(period.start)+' – '+date(period.end)+(def.scope==='tiers'?' · Previous month: '+period.previousLabel:''):'Choose a valid date range';
     const tools='<div class="doctors-actions"><input id="'+dom('sales-search-',key)+'" type="search" value="'+esc(state.search)+'" data-sales-search="'+esc(key)+'" placeholder="Search records" aria-label="Search '+esc(def.title)+'">'+(def.metric!==null?'<button id="'+dom('sales-chart-button-',key)+'" type="button" data-sales-chart="'+esc(key)+'" aria-expanded="'+state.chart+'" aria-controls="'+dom('sales-chart-',key)+'" '+(!rows.length?'disabled':'')+'>'+icon('ChartColumn')+'Chart</button>':'')+'<button type="button" data-sales-export="'+esc(key)+'" '+(!rows.length?'disabled':'')+'>'+icon('Download')+'Export CSV</button></div>';
-    const head='<div class="doctors-report-head"><div><h2 tabindex="-1" id="'+dom('sales-heading-',key)+'">'+esc(def.title)+'</h2><p class="doctors-period">'+caption+'</p></div>'+tools+'</div>';
+    const drill=['clients','categories','tierClients'].includes(def.id),contextLabel=def.id==='categories'?'Client':'PRO';
+    const guidance=def.id==='categories'?'Test counts and revenue by category for the selected client.':def.id==='tierClients'?'Compare client tiers and revenue with the previous month.':'Select a client to view its available test categories.';
+    const heading=drill?'<div class="doctors-breakdown-info dashboard-summary-info"><h3 tabindex="-1" id="'+dom('sales-heading-',key)+'">'+esc(def.title)+'</h3><p class="doctors-period">'+contextLabel+' summary · '+caption+' · All '+(def.id==='categories'?'client':def.id==='tierClients'?'client-tier':'PRO')+' activity</p><p class="doctors-note">'+guidance+'</p></div>':'<div><h2 tabindex="-1" id="'+dom('sales-heading-',key)+'">'+esc(def.title)+'</h2><p class="doctors-period">'+caption+'</p></div>';
+    const head='<div class="doctors-report-head">'+heading+tools+'</div>';
     const chart='<div class="doctors-chart rev-chart" id="'+dom('sales-chart-',key)+'" '+(!state.chart?'hidden':'')+'></div>';
     if(!def.columns.length)return '<section class="sales-empty-report">'+head+'<p class="sales-empty">'+emptyMessage(def)+'</p></section>';
     const displayedColumns=def.columns.map((_,index)=>index).filter(index=>def.id!=='clients'||index!==0);
@@ -93,7 +96,7 @@
   function breadcrumbs(report,pro,client){
     const items=[{label:'All PROs',back:'root'},{label:pro,back:client?'clients':null}];
     if(client)items.push({label:client[1],back:null});
-    return '<nav class="doctors-breadcrumb sales-breadcrumb" aria-label="'+(report==='tiers'?'Client-tier':'PRO performance')+' breadcrumbs"><ol>'+items.map((item,index)=>'<li>'+(index?icon('ChevronRight'):'')+(item.back?'<button type="button" data-sales-back="'+item.back+'" data-report="'+report+'">'+esc(item.label)+'</button>':'<span aria-current="page" tabindex="-1">'+esc(item.label)+'</span>')+'</li>').join('')+'</ol></nav>';
+    return '<nav class="doctors-breadcrumb sales-breadcrumb dashboard-report-breadcrumb" aria-label="'+(report==='tiers'?'Client-tier':'PRO performance')+' breadcrumbs"><ol>'+items.map((item,index)=>'<li>'+(index?icon('ChevronRight'):'')+(item.back?'<button type="button" data-sales-back="'+item.back+'" data-report="'+report+'">'+esc(item.label)+'</button>':'<span aria-current="page" tabindex="-1">'+esc(item.label)+'</span>')+'</li>').join('')+'</ol></nav>';
   }
   function renderReport(id){
     const def=definitions.find(item=>item.id===id);

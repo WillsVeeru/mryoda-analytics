@@ -4,26 +4,28 @@ function extract(name){const start=source.indexOf('function '+name+'(');assert(s
 const elements=new Map();function co(id){if(!elements.has(id))elements.set(id,{value:'all',innerHTML:'',textContent:'',children:[],setAttribute(k,v){this[k]=v;}});return elements.get(id);}
 let renders=0,calls=[],download;
 const context={Date,Intl,Map,Set,Number,console,co,centerEscape:String,centerNumber:String,centerMoney:v=>'₹'+v,dashboardIcon:()=>'',renderFinancialModule:()=>renders++,centerTotal:()=>({}),
- financialCostOverview:(a,b,current,previous)=>JSON.stringify({current,previous}),financialCostPivot:()=>'<pivot>',financialBranchExpenses:()=>'<branches>',financialCostPeriodComparison:()=>'<comparison>',
+ financialCostOverview:(a,b,current,previous)=>JSON.stringify({current,previous}),financialCostPivot:()=>'<pivot>',financialCostSummaryCards:()=>'',financialBranchExpenses:()=>'<branches>',financialCostPeriodComparison:()=>'<comparison>',
  financialPeriodCenters:period=>{calls.push(period);return[];},financialTableCellText:cell=>cell.textContent,
  downloadCenterInsightCSV:(name,rows,period)=>{download={name,rows,period};}};
 vm.createContext(context);
-vm.runInContext("let financialCostPeriod=1,financialCustomComparison=null,financialExpenseView='overview';",context);
-for(const name of ['financialValidComparisonDate','financialPeriod','financialCustomComparisonControls','setFinancialCostPeriod','setFinancialCustomComparison','financialCostAnalysis','financialSortValue','financialSortCompare','sortFinancialTableGroups','mountFinancialSortHeaders','financialNetMargin','financialTotals','financialTablePageWindow','exportFinancialDataTable'])vm.runInContext(extract(name),context);
+vm.runInContext("let financialCostPeriod=1,financialCustomComparison=null,financialCostCalendarPeriods={},financialCostReportSelection=null,financialCostComparisonSummary=null,financialExpenseView='overview';",context);
+for(const name of ['financialValidComparisonDate','financialPeriod','financialCostReportPeriod','financialPreviousRange','financialCostCalendarState','financialCostComparisonPeriod','financialCostActivePeriod','applyFinancialCostReportDates','financialCostReportToday','financialCostReportState','financialCostReportDraftPeriod','financialCostReportRangeLabel','updateFinancialCostReportPreview','refreshFinancialCostReportControls','setFinancialCostReportPeriodType','setFinancialCostReportPeriodField','financialCostReportControls','financialCostComparisonControls','setFinancialCostCalendarPeriod','financialCustomComparisonControls','setFinancialCostPeriod','setFinancialCustomComparison','financialCostAnalysis','financialSortValue','financialSortCompare','sortFinancialTableGroups','mountFinancialSortHeaders','financialNetMargin','financialTotals','financialTablePageWindow','exportFinancialDataTable'])vm.runInContext(extract(name),context);
 const evaluate=code=>vm.runInContext(code,context),json=value=>JSON.parse(JSON.stringify(value));
 co('coFrom').value='2026-11-06';co('coTo').value='2026-11-12';
 assert.deepEqual(json(context.financialPeriod(1)),{start:'2026-11-01',end:'2026-11-30'});
 assert.deepEqual(json(context.financialPeriod(3,true)),{start:'2026-07-01',end:'2026-09-30'});
-context.setFinancialCostPeriod('custom');assert.equal(evaluate('financialCostPeriod'),'custom');
+context.setFinancialCostPeriod('custom');evaluate("financialExpenseView='comparison'");assert.equal(evaluate('financialCostPeriod'),'custom');
 assert.deepEqual(json(context.financialPeriod('custom')),{start:'2026-11-06',end:'2026-11-12'});
 assert.deepEqual(json(context.financialPeriod('custom',true)),{start:'2026-10-30',end:'2026-11-05'});
-let html=context.financialCostAnalysis();assert(html.includes('Custom Comparison'));assert.equal((html.match(/type="date"/g)||[]).length,4);assert(html.includes('2026-11-06'));
+let html=context.financialCostAnalysis();assert(html.includes('Custom dates'));assert.equal((html.match(/type="date"/g)||[]).length,4);assert(html.includes('2026-11-06'));
 context.setFinancialCustomComparison('previousFrom','2025-10-01');context.setFinancialCustomComparison('previousTo','2025-10-31');
 calls=[];html=context.financialCostAnalysis();assert.deepEqual(json(calls),[{start:'2026-11-06',end:'2026-11-12'},{start:'2025-10-01',end:'2025-10-31'}]);
 context.setFinancialCustomComparison('currentFrom','2026-12-10');html=context.financialCostAnalysis();assert(html.includes('role="status"'));assert.equal((html.match(/type="date"/g)||[]).length,4);assert.equal(context.financialPeriod('custom'),null);
 assert(!context.financialValidComparisonDate('2026-02-30'));assert(context.financialValidComparisonDate('2024-02-29'));
 context.setFinancialCustomComparison('currentFrom','2026-11-06');context.setFinancialCostPeriod('12');assert.equal(evaluate('financialCostPeriod'),12);context.setFinancialCostPeriod('custom');assert.equal(context.financialPeriod('custom',true).start,'2025-10-01');
-for(const view of ['overview','pivot','branch','comparison']){evaluate("financialExpenseView='"+view+"'");assert(context.financialCostAnalysis().includes('financialCustom-currentFrom'));}
+for(const view of ['overview','pivot','branch']){evaluate("financialExpenseView='"+view+"'");const page=context.financialCostAnalysis();assert(page.includes('financialCostReportType'));assert(!page.includes('financialCustom-currentFrom'));assert.deepEqual(json(context.financialCostActivePeriod()),{start:'2026-11-06',end:'2026-11-12'});}
+evaluate("financialExpenseView='comparison'");assert(context.financialCostAnalysis().includes('financialCustom-currentFrom'));
+evaluate("financialExpenseView='pivot'");
 for(const [text,value]of [['₹1,20,000',120000],['−₹20,000',-20000],['+₹20,000',20000],['₹-20,000',-20000],['-2.3%',-2.3],['₹1.34Cr',13400000],['₹6.68L',668000],['—',null]])assert.equal(context.financialSortValue(text),value);
 assert(context.financialSortCompare('₹9,500','₹1,20,000','desc')>0);assert(context.financialSortCompare('₹-20,000','₹0','asc')<0);assert(context.financialSortCompare('—','₹0','asc')>0);assert(context.financialSortCompare('—','₹0','desc')>0);assert(context.financialSortCompare('Branch 2','Branch 10','asc')<0);
 class Node{

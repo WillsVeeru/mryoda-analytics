@@ -85,7 +85,7 @@
     if(selected.valid&&selected.elapsed>0&&selected.elapsed<selected.days)$('targetsActualScope').textContent+=' · Monthly Shortfall / Excess is provisional until month-end.';
     const savedRows=all.filter(row=>row.target!==null),missing=savedRows.some(row=>row.actual===null);
     $('targetsNote').textContent=!selected.valid?'Choose a valid month and year.':missing?'People without activity data show — and Awaiting activity. Existing actuals and history are preserved.':!savedRows.length?'No targets set for '+selected.label+'. Set one above.':'';
-    if(selected.valid&&all.some(row=>row.hasSample))$('targetsNote').textContent='Sample data is shown only for the existing demo team. Saved targets and available actuals take priority.';
+    if(selected.valid&&all.some(row=>row.hasSample))$('targetsNote').textContent='Labelled sample values preview the existing demo team and six supplied PROs. Saved targets and available actuals take priority.';
     if(selected.valid&&missing&&all.some(row=>row.hasSample))$('targetsNote').textContent+=' People without activity data show — and Awaiting activity.';
     $('targetsFinanceLink').href=data.link('center-overview.html?targetFrom='+encodeURIComponent(selected.from)+'&targetTo='+encodeURIComponent(selected.to)+'#coWorkspaceCharts');
     $('targetsExport').disabled=!all.length;$('targetsChartToggle').disabled=!all.some(row=>row.target!==null||row.previousTarget!==null||row.actual!==null);

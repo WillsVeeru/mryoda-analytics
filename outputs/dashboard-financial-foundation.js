@@ -32,9 +32,10 @@
       card.classList.add('dashboard-financial-kpi');
       const label=card.querySelector('.kpi-label,.label,h2,.tp-stat-top > span:first-child')||card.querySelector(':scope > span');
       const value=card.querySelector('.kpi-value,.metric,strong');
-      const note=card.querySelector('.kpi-foot,p,small');
+      const note=card.querySelector('[data-kpi-note]')||card.querySelector('.kpi-foot,p:not(.application-table-period):not(.financial-table-period),small:not(.application-table-period):not(.financial-table-period)');
       const icon=card.querySelector('.restored-kpi-icon,.metric-icon,.tp-stat-icon');
       if(label){label.classList.add('dashboard-financial-kpi-label');const text=label.textContent.toLowerCase();card.dataset.dashboardKpiTone=/failed|failure/.test(text)?'negative':/balance|passed|pass rate/.test(text)?'positive':'neutral';}
+      for(const previous of card.querySelectorAll('.dashboard-financial-kpi-note'))if(previous!==note)previous.classList.remove('dashboard-financial-kpi-note');
       value?.classList.add('dashboard-financial-kpi-value');note?.classList.add('dashboard-financial-kpi-note');icon?.classList.add('dashboard-financial-kpi-icon');
     });
   }
